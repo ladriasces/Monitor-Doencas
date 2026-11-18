@@ -1,0 +1,23 @@
+# Arquivos brutos baixados a cada coleta (recriados pelo 01_coleta.py). Os do SIVEP-Gripe têm dados
+# individuais de saúde: nunca podem ir para o repositório.
+data/raw/
+*.parquet
+*.dbc
+
+# Dados da semana: gerados pelo GitHub Actions e publicados direto no Pages
+docs/dados/
+
+# Chaves de acesso (ficam só no computador ou nos secrets do GitHub)
+.mosqlimate_key
+.goatcounter_token
+
+# Python
+__pycache__/
+*.pyc
+
+# Ferramentas locais
+.claude/
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini

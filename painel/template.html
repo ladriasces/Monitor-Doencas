@@ -1,0 +1,1211 @@
+<meta charset="utf-8">
+<title>Monitor de Doenças por Território</title>
+<style>
+/* Fontes servidas pelo próprio site (SIL Open Font License; ver fontes/OFL.txt): nenhum dado de quem
+   acessa vai para terceiros. Arquivos variáveis, só os alfabetos latinos. */
+@font-face { font-family: "Fraunces"; font-style: normal; font-display: swap; font-weight: 100 900;
+  src: url(fontes/fraunces-latin-ext-opsz-normal.woff2) format("woff2"); unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }
+@font-face { font-family: "Fraunces"; font-style: normal; font-display: swap; font-weight: 100 900;
+  src: url(fontes/fraunces-latin-opsz-normal.woff2) format("woff2"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+@font-face { font-family: "Public Sans"; font-style: normal; font-display: swap; font-weight: 100 900;
+  src: url(fontes/public-sans-latin-ext-wght-normal.woff2) format("woff2"); unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }
+@font-face { font-family: "Public Sans"; font-style: normal; font-display: swap; font-weight: 100 900;
+  src: url(fontes/public-sans-latin-wght-normal.woff2) format("woff2"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+/* Identidade da família de monitores do LADRI (mesmas fontes e formas do Monitor El Niño), com o
+   verde-petróleo da saúde como cor de destaque. */
+:root {
+  --bg: #f1f0ea; --surface: #fbfaf6; --ink: #1c2a2b; --ink-2: #455759; --muted: #5d6a6b;
+  --line: #e0ddd2; --line-strong: #c8c3b4;
+  --accent: #1d6b6f; --accent-ink: #ffffff; --accent-soft: #dcebe9;
+  --mid: #ebe8de;
+  /* Níveis de alerta do InfoDengue (cores oficiais: verde, amarelo, laranja, vermelho) */
+  --n1: #3f9c5a; --n2: #e8c33a; --n3: #f08a2e; --n4: #d64545;
+  /* Agentes da SRAG: categóricas validadas para daltonismo; neutros para "não especificado" */
+  --covid: #7b52a8; --flu-a: #c4511f; --flu-b: #e39a6b; --flu-nd: #d7b39b; --vsr: #007a5e; --outros: #b38a1f;
+  --agente-out: #8f8a7e; --nao-esp: #c9c3b6; --invest: #e1ddd2;
+  --inc: #a3361f;           /* incidência (escala sequencial) */
+  --quente: #c4511f; --frio: #2f8a7e; --seco: #a8701c; --umido: #1f7a5a;
+  --c3: #5f5a4f; --c4: #a39d8f;
+  --f-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --f-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --shadow: 0 1px 2px rgba(40, 50, 50, .05), 0 6px 22px rgba(40, 50, 50, .06);
+  --raio: 16px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111a1a; --surface: #172222; --ink: #e9f0ee; --ink-2: #bccac7; --muted: #879593;
+    --line: #253232; --line-strong: #354545; --accent: #6cbcb6; --accent-ink: #0b1515; --accent-soft: #1b2f2e;
+    --mid: #2b3636;
+    --n1: #4cb36c; --n2: #d9b23c; --n3: #e08a3c; --n4: #e05a5a;
+    --covid: #a283c9; --flu-a: #d9683a; --flu-b: #e7a27a; --flu-nd: #a98d79; --vsr: #2aa898; --outros: #c9a33d;
+    --agente-out: #7d776b; --nao-esp: #5a5850; --invest: #3c3b36;
+    --inc: #f0875f; --quente: #d9683a; --frio: #4fa89c; --seco: #c9913d; --umido: #4fb08a;
+    --c3: #b9b2a3; --c4: #7d776b;
+    --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111a1a; --surface: #172222; --ink: #e9f0ee; --ink-2: #bccac7; --muted: #879593;
+  --line: #253232; --line-strong: #354545; --accent: #6cbcb6; --accent-ink: #0b1515; --accent-soft: #1b2f2e;
+  --mid: #2b3636;
+  --n1: #4cb36c; --n2: #d9b23c; --n3: #e08a3c; --n4: #e05a5a;
+  --covid: #a283c9; --flu-a: #d9683a; --flu-b: #e7a27a; --flu-nd: #a98d79; --vsr: #2aa898; --outros: #c9a33d;
+  --agente-out: #7d776b; --nao-esp: #5a5850; --invest: #3c3b36;
+  --inc: #f0875f; --quente: #d9683a; --frio: #4fa89c; --seco: #c9913d; --umido: #4fb08a;
+  --c3: #b9b2a3; --c4: #7d776b;
+  --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: radial-gradient(1100px 520px at 8% -8%, var(--accent-soft), transparent 62%), var(--bg); color: var(--ink); font: 15px/1.55 var(--f-body); margin: 0; min-height: 100vh; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 0 48px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; font-optical-sizing: auto; }
+h2 { font-size: 1.5rem; font-weight: 600; letter-spacing: -.01em; }
+h3 { font-size: 1.06rem; font-weight: 600; }
+p { margin: 0; }
+.eyebrow { font-size: .72rem; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+.lede { color: var(--ink-2); max-width: 72ch; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Cabeçalho */
+header.top { padding-block: 28px 18px; display: grid; gap: 18px; }
+.titulo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; }
+.titulo h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 650; letter-spacing: -.015em; line-height: 1.05; }
+.marca { display: flex; align-items: center; gap: 18px; min-width: 0; }
+.logo { flex: none; width: 104px; height: 65px; background: var(--ink);
+  -webkit-mask: url("__LOGO__") center / contain no-repeat; mask: url("__LOGO__") center / contain no-repeat; }
+.seletores { display: flex; flex-wrap: wrap; gap: 8px; justify-content: end; align-items: center; }
+.btn { font: 600 .86rem var(--f-body); color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 999px; padding: 8px 15px; cursor: pointer; display: inline-flex; gap: 7px; align-items: center; transition: background-color .15s, border-color .15s; }
+.btn:hover { border-color: var(--accent); background: var(--accent-soft); }
+.btn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn .pin { width: 14px; height: 14px; flex: none; }
+
+/* Placar da semana */
+.hero { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 22px 26px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 330px); gap: 18px 28px; box-shadow: var(--shadow); align-items: center; }
+.hero-texto { display: grid; gap: 10px; }
+.hero .manchete { font-family: var(--f-display); font-weight: 650; font-size: clamp(1.5rem, 3.6vw, 2.2rem); line-height: 1.12; letter-spacing: -.015em; }
+.hero-blocos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.hero-bloco { border-top: 4px solid var(--line-strong); padding-top: 8px; display: grid; gap: 2px; align-content: start; }
+.hero-bloco .t { font-size: .74rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.hero-bloco .v { font-family: var(--f-display); font-weight: 650; font-size: 1.35rem; line-height: 1.15; }
+.hero-bloco .d { font-size: .82rem; color: var(--ink-2); }
+.hero-mapa svg { display: block; width: 100%; height: auto; }
+.hero-mapa path { stroke: var(--surface); stroke-width: .6; }
+.selo { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: .74rem; font-weight: 700; letter-spacing: .03em; background: color-mix(in srgb, var(--n2) 26%, transparent); color: var(--ink); justify-self: start; }
+
+/* Abas */
+nav.abas { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: color-mix(in srgb, var(--bg) 88%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); padding-block: 10px; border-bottom: 1px solid var(--line); }
+nav.abas .lista { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+nav.abas button { font: 600 .88rem var(--f-body); color: var(--ink-2); background: transparent; border: 1px solid transparent; border-radius: 999px; padding: 8px 16px; cursor: pointer; white-space: nowrap; transition: background-color .15s, color .15s; }
+nav.abas button:hover { color: var(--ink); background: var(--accent-soft); }
+nav.abas button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+body.modo-sobre .hero { display: none; }
+.voltar { justify-self: start; }
+
+section.aba { padding-top: 26px; display: grid; gap: 22px; }
+.cab { display: grid; gap: 6px; }
+.grade { display: grid; gap: 18px; grid-template-columns: repeat(12, minmax(0, 1fr)); }
+.c4 { grid-column: span 4; } .c5 { grid-column: span 5; } .c6 { grid-column: span 6; } .c7 { grid-column: span 7; } .c8 { grid-column: span 8; } .c12 { grid-column: span 12; }
+@media (max-width: 900px) { .c4, .c5, .c6, .c7, .c8 { grid-column: span 12; } .hero { grid-template-columns: minmax(0, 1fr); } }
+.cartao { background: var(--surface); border: 1px solid var(--line); border-radius: var(--raio); padding: 18px 20px; box-shadow: var(--shadow); display: grid; gap: 12px; align-content: start; min-width: 0; }
+.cartao .nota, .nota { font-size: .8rem; color: var(--muted); }
+.cartao-cab { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 14px; }
+.aviso-prelim { border-left: 4px solid var(--n2); background: color-mix(in srgb, var(--n2) 10%, var(--surface)); padding: 10px 14px; border-radius: 8px; font-size: .86rem; color: var(--ink-2); }
+
+/* KPIs */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: var(--raio); padding: 14px 16px; display: grid; gap: 3px; align-content: start; box-shadow: var(--shadow); }
+.kpi .v { font-family: var(--f-display); font-weight: 600; font-size: 1.8rem; line-height: 1.1; letter-spacing: -.01em; }
+.kpi .l { font-size: .78rem; color: var(--ink-2); }
+.kpi .d { font-size: .76rem; color: var(--muted); }
+.kpi .marca-cor { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; vertical-align: 1px; }
+
+/* Controles */
+.controles { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 999px; overflow: hidden; background: var(--surface); padding: 2px; gap: 2px; }
+.seg button { font: 500 .83rem var(--f-body); border: 0; background: transparent; color: var(--ink-2); padding: 6px 12px; cursor: pointer; border-radius: 999px; }
+.seg button:hover { background: var(--accent-soft); color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.ctl-label { font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
+select, input[type="search"] { font: 500 .9rem var(--f-body); padding: 7px 10px; border: 1px solid var(--line-strong); border-radius: 7px; background: var(--surface); color: var(--ink); }
+input[type="search"] { width: 240px; max-width: 100%; }
+
+/* Mapas */
+.mapa { position: relative; width: 100%; }
+.mapa svg { display: block; width: 100%; height: auto; }
+.mapa path.feat { stroke: var(--surface); stroke-width: .35; vector-effect: non-scaling-stroke; }
+.mapa path.feat:hover, .mapa path.feat.sel { stroke: var(--ink); stroke-width: 1.6; }
+.mapa path.feat.meu { stroke: var(--ink); stroke-width: 2.4; }
+.mapa path.contorno { fill: none; stroke: var(--ink); stroke-opacity: .4; stroke-width: .8; pointer-events: none; vector-effect: non-scaling-stroke; }
+.legenda { display: grid; gap: 4px; font-size: .76rem; color: var(--ink-2); max-width: 380px; }
+.legenda .rampa { height: 10px; border-radius: 3px; }
+.legenda .ticks { display: flex; justify-content: space-between; color: var(--muted); }
+.chips { display: flex; gap: 6px 14px; flex-wrap: wrap; font-size: .78rem; color: var(--ink-2); }
+.chip { display: inline-flex; align-items: center; gap: 6px; }
+.chip i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; flex: none; }
+.chip i.linha { height: 3px; border-radius: 2px; width: 16px; }
+.chip i.tracejada { height: 0; border-top: 2px dashed var(--ink-2); border-radius: 0; width: 16px; }
+.chip i.faixa { opacity: .35; }
+
+.tip { position: fixed; z-index: 50; pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 8px; padding: 9px 11px; font-size: .8rem; box-shadow: 0 6px 24px rgba(0,0,0,.18); min-width: 180px; max-width: 290px; }
+.tip b { display: block; font-family: var(--f-display); font-size: .95rem; }
+.tip .ln { display: flex; justify-content: space-between; gap: 12px; font-variant-numeric: tabular-nums; }
+.tip .ln span:first-child { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); }
+
+/* Detalhe */
+.detalhe { display: grid; gap: 10px; align-content: start; }
+.detalhe .nome { font-family: var(--f-display); font-weight: 700; font-size: 1.35rem; line-height: 1.1; }
+.linhas { display: grid; gap: 4px; font-size: .86rem; }
+.linhas > div { display: flex; justify-content: space-between; gap: 12px; border-top: 1px solid var(--line); padding-top: 4px; }
+.linhas > div span:last-child { font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; }
+.nivel { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; font-weight: 700; padding: 2px 10px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line-strong); white-space: nowrap; }
+.nivel i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.tendencia { font-weight: 700; }
+.tendencia.alta { color: var(--n4); } .tendencia.queda { color: var(--n1); } .tendencia.estavel { color: var(--ink-2); }
+
+/* Gráficos */
+.grafico svg { display: block; width: 100%; height: auto; overflow: visible; }
+.grafico text { fill: var(--ink-2); font-family: var(--f-body); font-size: 12px; }
+.grafico .eixo line, .grafico .eixo path { stroke: var(--line-strong); }
+.grafico .grid line { stroke: var(--line); }
+.grafico .rot-forte { fill: var(--ink); font-weight: 650; }
+.grafico .cruz { stroke: var(--muted); stroke-width: 1; pointer-events: none; }
+
+/* Notícias */
+.noticias { display: grid; gap: 0; }
+.noticia { display: grid; gap: 2px; padding: 10px 0; border-top: 1px solid var(--line); }
+.noticia:first-child { border-top: 0; }
+.noticia a { color: var(--ink); text-decoration: none; font-weight: 600; line-height: 1.35; }
+.noticia a:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.noticia .q { font-size: .78rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+.tag { display: inline-block; font-size: .7rem; font-weight: 700; padding: 0 6px; border-radius: 4px; background: var(--bg); border: 1px solid var(--line); color: var(--ink-2); }
+.tag.meu { background: var(--accent-soft); border-color: var(--accent); }
+
+/* Meu lugar */
+.lugar-painel { background: var(--surface); border: 1px solid var(--accent); border-radius: 22px; padding: 20px 22px; display: grid; gap: 14px; box-shadow: var(--shadow); max-width: 640px; }
+.lugar-topo { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
+.lugar-topo p { margin-top: 4px; font-size: .9rem; }
+.lugar-acoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.fechar { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); cursor: pointer; font-size: .95rem; }
+.fechar:hover { background: var(--accent-soft); }
+.busca-lugar { position: relative; }
+.busca-lugar input { width: 100%; font: 500 1rem var(--f-body); padding: 13px 16px 13px 44px; border: 1.5px solid var(--line-strong); border-radius: 999px; background: var(--surface); color: var(--ink); }
+.busca-lugar input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.busca-lugar .lupa { position: absolute; left: 16px; top: 50%; width: 18px; height: 18px; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.sugestoes { position: absolute; z-index: 40; left: 0; right: 0; top: calc(100% + 6px); margin: 0; padding: 6px; list-style: none; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 16px; box-shadow: 0 10px 30px rgba(20, 35, 35, .18); max-height: 330px; overflow: auto; }
+.sugestoes li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 10px; cursor: pointer; }
+.sugestoes li .uf { color: var(--muted); font-size: .85rem; white-space: nowrap; }
+.sugestoes li[aria-selected="true"], .sugestoes li:hover { background: var(--accent-soft); }
+.sugestoes li.vazio { color: var(--muted); cursor: default; }
+.sugestoes mark { background: none; color: var(--accent); font-weight: 700; }
+.escolher-lugar { display: grid; gap: 10px; padding: 18px; border-radius: 14px; background: color-mix(in srgb, var(--accent-soft) 60%, var(--surface)); }
+.escolher-lugar b { font-family: var(--f-display); font-size: 1.15rem; font-weight: 600; }
+.aviso-lugar { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); z-index: 60; background: var(--ink); color: var(--bg); padding: 11px 18px; border-radius: 999px; font-weight: 600; font-size: .9rem; box-shadow: 0 8px 26px rgba(0,0,0,.25); opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; max-width: calc(100vw - 32px); }
+.aviso-lugar.ver { opacity: 1; transform: translate(-50%, 0); }
+#btn-lugar.vazio { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.meu-doencas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.meu-doenca { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 4px; align-content: start; }
+.meu-doenca b { font-family: var(--f-display); font-size: 1rem; }
+@media (max-width: 640px) { .meu-doencas { grid-template-columns: minmax(0, 1fr); } }
+
+/* Clima e saúde */
+.efeitos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.efeitos > div { border-top: 3px solid var(--line-strong); padding-top: 8px; display: grid; gap: 4px; align-content: start; font-size: .86rem; }
+.efeitos b { font-family: var(--f-display); font-size: 1rem; }
+.efeitos .quente { border-color: var(--quente); } .efeitos .umido { border-color: var(--umido); } .efeitos .seco { border-color: var(--seco); } .efeitos .frio { border-color: var(--frio); }
+@media (max-width: 900px) { .efeitos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.planejado { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.planejado > div { border: 1px dashed var(--line-strong); border-radius: 12px; padding: 12px 14px; display: grid; gap: 4px; font-size: .86rem; }
+.planejado b { font-family: var(--f-display); font-size: 1rem; }
+
+/* Tabelas */
+.tabela-wrap { overflow-x: auto; }
+.tabela-wrap.alta { max-height: 560px; overflow: auto; }
+.tabela-wrap.alta th { position: sticky; top: 0; background: var(--surface); z-index: 1; }
+table { border-collapse: collapse; width: 100%; font-size: .84rem; }
+th, td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+th { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+th:first-child, td:first-child { text-align: left; }
+tr.destaque td { background: var(--accent-soft); font-weight: 600; }
+tr[data-uf] { cursor: pointer; }
+tr[data-uf]:hover td { background: color-mix(in srgb, var(--accent-soft) 60%, transparent); }
+.barra-niveis { display: flex; height: 10px; border-radius: 3px; overflow: hidden; min-width: 120px; background: var(--line); }
+.barra-niveis i { display: block; height: 100%; }
+
+.texto { display: grid; gap: 10px; max-width: 78ch; }
+.texto ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+.texto details { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; background: var(--surface); }
+.texto summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+.texto details[open] summary { margin-bottom: 10px; }
+code { font-size: .85em; background: var(--bg); padding: 1px 5px; border-radius: 4px; border: 1px solid var(--line); }
+.aviso-dados { padding: 18px; border: 1px dashed var(--line-strong); border-radius: 10px; color: var(--ink-2); text-align: center; }
+.mais { justify-self: center; }
+.repo { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px 24px; border-color: var(--accent); }
+@media (max-width: 640px) { .repo { grid-template-columns: minmax(0, 1fr); justify-items: start; } }
+.btn-repo { font: 700 .95rem var(--f-body); background: var(--accent); color: var(--accent-ink); text-decoration: none; padding: 10px 16px; border-radius: 8px; border-bottom: 3px solid color-mix(in srgb, var(--accent) 60%, #000); white-space: nowrap; justify-self: end; }
+footer { margin-top: 36px; font-size: .8rem; color: var(--muted); display: grid; gap: 4px; border-top: 1px solid var(--line); padding-top: 18px; }
+footer a { color: var(--ink); text-underline-offset: 2px; }
+.redes { display: flex; align-items: center; gap: 12px; }
+.redes a { display: inline-flex; }
+.ico { width: 24px; height: 24px; flex: none; }
+
+/* ---------- Celular ---------- */
+@media (max-width: 640px) {
+  .wrap { padding-inline: 16px; }
+  header.top { padding-block: 14px 10px; gap: 10px; }
+  .titulo { display: grid; gap: 10px; }
+  .titulo .eyebrow { font-size: .6rem; letter-spacing: .06em; }
+  .titulo h1 { font-size: 1.4rem; }
+  .marca { gap: 12px; }
+  .logo { width: 72px; height: 45px; }
+  .seletores { justify-content: start; }
+  .hero { padding: 14px; gap: 12px; }
+  .hero-blocos { grid-template-columns: minmax(0, 1fr); }
+  nav.abas { padding-block: 8px; }
+  nav.abas .lista { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 28px), transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 28px), transparent 100%); padding-inline: 4px 24px; }
+  nav.abas button, .btn, .seg button { min-height: 40px; }
+  select { min-height: 44px; }
+  input[type="search"] { min-height: 40px; width: 100%; }
+  section.aba { padding-top: 16px; gap: 14px; }
+  .grade { gap: 12px; }
+  .cartao { padding: 12px; }
+  h2 { font-size: 1.25rem; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .kpi { padding: 10px 12px; }
+  .kpi .v { font-size: 1.35rem; }
+  .seg { flex-wrap: wrap; }
+  .zoom-ctl { position: absolute; top: 6px; right: 6px; display: grid; gap: 4px; z-index: 2; }
+  .zoom-ctl button { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font: 700 1.05rem var(--f-body); cursor: pointer; }
+  .tip.tip-fixo { left: 8px !important; right: 8px; top: auto !important; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); max-width: none; min-width: 0; pointer-events: auto; padding: 12px 40px 12px 14px; font-size: .86rem; }
+  .tip-fechar { position: absolute; top: 6px; right: 6px; width: 30px; height: 30px; border: 0; border-radius: 6px; background: var(--bg); color: var(--ink); font-size: .95rem; cursor: pointer; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="titulo">
+      <div class="marca">
+        <span class="logo" role="img" aria-label="Logo do LADRI"></span>
+        <div>
+          <div class="eyebrow">LADRI · Laboratório de Dados e Relações Internacionais · ASCES-UNITA</div>
+          <h1>Monitor de Doenças por Território</h1>
+        </div>
+      </div>
+      <div class="seletores">
+        <button class="btn" id="btn-lugar" type="button" aria-expanded="false"><svg class="pin" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg><span id="btn-lugar-txt">Escolha seu município</span></button>
+        <button class="btn" id="btn-sobre" type="button" aria-pressed="false">Dados e método</button>
+      </div>
+    </div>
+    <div class="lugar-painel" id="lugar-painel" role="dialog" aria-labelledby="lugar-titulo" hidden>
+      <div class="lugar-topo">
+        <div><h2 id="lugar-titulo">Onde você está?</h2><p class="muted">Escolha seu município para ver a dengue, a chikungunya, a zika, as doenças respiratórias do seu estado e o clima da sua região em todas as abas.</p></div>
+        <button class="fechar" id="lugar-fechar" type="button" aria-label="Fechar">✕</button>
+      </div>
+      <div data-busca-lugar></div>
+      <div class="lugar-acoes">
+        <button class="btn" type="button" data-acao="gps"><svg class="pin" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm8.94 3A9 9 0 0 0 13 3.06V1h-2v2.06A9 9 0 0 0 3.06 11H1v2h2.06A9 9 0 0 0 11 20.94V23h2v-2.06A9 9 0 0 0 20.94 13H23v-2h-2.06zM12 19a7 7 0 1 1 0-14 7 7 0 0 1 0 14z"/></svg>Usar minha localização</button>
+        <button class="btn" id="lugar-limpar" type="button" hidden>Esquecer meu lugar</button>
+      </div>
+      <p class="nota">A escolha fica guardada só neste navegador. A localização é usada apenas no seu aparelho, para achar a sua região; nada é enviado.</p>
+    </div>
+    <div class="hero" id="hero"><div class="aviso-dados">Carregando os dados…</div></div>
+  </header>
+
+  <nav class="abas" aria-label="Seções">
+    <div class="lista" role="tablist">
+      <button role="tab" data-aba="agora" aria-selected="true">Agora</button>
+      <button role="tab" data-aba="arbo" aria-selected="false">Dengue, chikungunya e zika</button>
+      <button role="tab" data-aba="srag" aria-selected="false">Doenças respiratórias</button>
+      <button role="tab" data-aba="clima" aria-selected="false">Clima e saúde</button>
+      <button role="tab" data-aba="outras" aria-selected="false">Outras doenças</button>
+      <button role="tab" data-aba="noticias" aria-selected="false">Notícias</button>
+    </div>
+  </nav>
+
+  <!-- AGORA -->
+  <section class="aba" id="aba-agora">
+    <div class="kpis" id="kpis-agora"></div>
+    <div class="grade">
+      <div class="cartao c7" id="meu-lugar"></div>
+      <div class="cartao c5">
+        <div class="cartao-cab"><h3>Dengue: nível de alerta por município</h3><span class="nota" id="nota-mapa-agora"></span></div>
+        <div class="mapa" id="mapa-agora"></div>
+        <div class="chips" id="leg-agora"></div>
+        <button class="btn" type="button" data-ir="arbo" style="justify-self:start">Abrir o mapa das arboviroses →</button>
+      </div>
+      <div class="cartao c12">
+        <div class="cartao-cab"><h3 id="tit-noticias-agora">Últimas notícias</h3><button class="btn" type="button" data-ir="noticias">Todas as notícias →</button></div>
+        <div class="noticias" id="noticias-agora"></div>
+      </div>
+      <div class="cartao c12">
+        <h3>Ao ter sintomas</h3>
+        <p class="lede">Febre, dor no corpo, manchas na pele, falta de ar ou piora rápida: procure uma unidade de saúde e não tome remédios por conta própria. As orientações oficiais estão no site do <a href="https://www.gov.br/saude/pt-br" target="_blank" rel="noopener noreferrer">Ministério da Saúde</a> e da secretaria de saúde do seu estado e do seu município.</p>
+        <p class="nota">Esta plataforma informa e explica os dados oficiais. Ela não faz diagnóstico, não substitui a orientação de profissionais de saúde nem os alertas das secretarias de saúde.</p>
+      </div>
+      <div class="cartao c12">
+        <h3>Quando os dados foram atualizados</h3>
+        <div class="tabela-wrap"><table id="tab-atualizacao"></table></div>
+        <p class="nota">As fontes de saúde publicam dados novos uma vez por semana, por semana epidemiológica (de domingo a sábado). A plataforma confere as fontes várias vezes por dia e publica assim que há dados novos. As últimas semanas são sempre preliminares: os casos continuam sendo registrados e os números sobem nas semanas seguintes.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ARBOVIROSES -->
+  <section class="aba" id="aba-arbo" hidden>
+    <div class="cab">
+      <h2>Dengue, chikungunya e zika</h2>
+      <p class="lede">As três doenças são transmitidas pelo mosquito <i>Aedes aegypti</i>. Os indicadores de cada município vêm do InfoDengue (Fiocruz e FGV), que trabalha com o Ministério da Saúde: casos notificados, a estimativa de casos que ainda vão ser registrados, a incidência e o nível de alerta.</p>
+    </div>
+    <div class="controles">
+      <span><span class="ctl-label">Doença</span><span class="seg" id="ctl-arbo-doenca"><button type="button" data-v="dengue" aria-pressed="true">Dengue</button><button type="button" data-v="chikungunya" aria-pressed="false">Chikungunya</button><button type="button" data-v="zika" aria-pressed="false">Zika</button></span></span>
+      <span><span class="ctl-label">Mapa</span><span class="seg" id="ctl-arbo-ind"><button type="button" data-v="nivel" aria-pressed="true">Nível de alerta</button><button type="button" data-v="inc" aria-pressed="false">Incidência</button></span></span>
+      <span><span class="ctl-label">Território</span><select id="sel-arbo-uf" aria-label="Território"><option value="">Brasil</option></select></span>
+    </div>
+    <div class="kpis" id="kpis-arbo"></div>
+    <div class="grade">
+      <div class="cartao c7">
+        <div class="cartao-cab"><h3 id="tit-mapa-arbo">Mapa</h3><span class="nota" id="nota-mapa-arbo"></span></div>
+        <div class="mapa" id="mapa-arbo"></div>
+        <div id="leg-arbo"></div>
+      </div>
+      <div class="cartao c5 detalhe" id="det-arbo"></div>
+      <div class="cartao c12">
+        <div class="cartao-cab"><h3 id="tit-serie-arbo">Casos por semana</h3><span class="chips" id="leg-serie-arbo"></span></div>
+        <div class="grafico" id="g-arbo"></div>
+        <p class="nota">Barras: casos já notificados em cada semana de início dos sintomas. Linha: estimativa do InfoDengue, que soma os casos que ainda serão registrados (o atraso de notificação). As semanas mais recentes são as mais incertas.</p>
+      </div>
+      <div class="cartao c12">
+        <div class="cartao-cab"><h3>Por estado</h3><span class="nota">Clique em um estado para ver o mapa dele</span></div>
+        <div class="tabela-wrap"><table id="tab-arbo"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SRAG -->
+  <section class="aba" id="aba-srag" hidden>
+    <div class="cab">
+      <h2>Doenças respiratórias graves (SRAG)</h2>
+      <p class="lede">Síndrome respiratória aguda grave (SRAG) é o quadro de quem precisa ser internado ou morre com falta de ar, febre e tosse. Todo caso de SRAG é notificado ao Ministério da Saúde (sistema SIVEP-Gripe), e os exames indicam qual vírus causou a doença: covid-19, influenza (gripe), vírus sincicial respiratório (VSR) e outros.</p>
+    </div>
+    <div class="controles">
+      <span><span class="ctl-label">Território</span><select id="sel-srag-uf" aria-label="Território"><option value="BR">Brasil</option></select></span>
+      <span><span class="ctl-label">Mostrar</span><span class="seg" id="ctl-srag-med"><button type="button" data-v="casos" aria-pressed="true">Casos</button><button type="button" data-v="obitos" aria-pressed="false">Óbitos</button></span></span>
+    </div>
+    <div class="aviso-prelim" id="aviso-srag"></div>
+    <div class="kpis" id="kpis-srag"></div>
+    <div class="grade">
+      <div class="cartao c12">
+        <div class="cartao-cab"><h3 id="tit-g-srag">Casos de SRAG por semana</h3><span class="chips" id="leg-g-srag"></span></div>
+        <div class="grafico" id="g-srag"></div>
+        <p class="nota" id="nota-g-srag"></p>
+      </div>
+      <div class="cartao c6">
+        <h3>Vírus identificados nas últimas 8 semanas consolidadas</h3>
+        <div class="grafico" id="g-agentes"></div>
+        <p class="nota">Entre os casos com exame positivo. Muitos casos ficam sem vírus identificado (exame não feito ou negativo).</p>
+      </div>
+      <div class="cartao c6">
+        <h3>Idade dos pacientes nas últimas 8 semanas consolidadas</h3>
+        <div class="grafico" id="g-faixas"></div>
+        <p class="nota">Crianças pequenas e idosos são os grupos mais atingidos pela SRAG.</p>
+      </div>
+      <div class="cartao c5">
+        <div class="cartao-cab"><h3>Tendência por estado</h3></div>
+        <div class="mapa" id="mapa-srag"></div>
+        <div class="chips" id="leg-mapa-srag"></div>
+      </div>
+      <div class="cartao c7">
+        <h3>Estados</h3>
+        <div class="tabela-wrap alta"><table id="tab-srag"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLIMA E SAÚDE -->
+  <section class="aba" id="aba-clima" hidden>
+    <div class="cab">
+      <h2>Clima e saúde</h2>
+      <p class="lede" id="lede-clima"></p>
+    </div>
+    <div class="grade">
+      <div class="cartao c6">
+        <div class="cartao-cab"><h3>Temperatura nos últimos 30 dias</h3><span class="nota">diferença da média de 1991–2020</span></div>
+        <div class="mapa" id="mapa-temp"></div>
+        <div class="legenda" id="leg-temp"></div>
+      </div>
+      <div class="cartao c6">
+        <div class="cartao-cab"><h3>Dengue nas últimas 4 semanas</h3><span class="nota">casos estimados por 100 mil habitantes</span></div>
+        <div class="mapa" id="mapa-dengue-clima"></div>
+        <div class="legenda" id="leg-dengue-clima"></div>
+      </div>
+      <div class="cartao c12">
+        <div class="cartao-cab"><h3>Calor e dengue em cada região</h3><span class="chips" id="leg-disp"></span></div>
+        <div class="grafico" id="g-disp"></div>
+        <p class="nota">Cada ponto é uma das 510 regiões imediatas do IBGE. O gráfico mostra se as regiões mais quentes que o normal também têm mais dengue agora. Uma associação no gráfico não prova que uma coisa causa a outra: a dengue depende também da estação do ano, de chuvas passadas, da imunidade da população e do controle do mosquito.</p>
+      </div>
+      <div class="cartao c12">
+        <h3>Como o clima pode afetar a saúde</h3>
+        <div class="efeitos">
+          <div class="quente"><b>Calor</b><span>Temperaturas altas aceleram o ciclo do <i>Aedes aegypti</i> e a multiplicação do vírus no mosquito, o que favorece a dengue, a chikungunya e a zika. Ondas de calor também agravam doenças do coração e dos rins, sobretudo em idosos.</span></div>
+          <div class="umido"><b>Chuva e enchentes</b><span>Água parada vira criadouro de mosquito. Enchentes aumentam o risco de leptospirose (pelo contato com água contaminada) e de doenças diarreicas.</span></div>
+          <div class="seco"><b>Seca</b><span>Guardar água em casa sem tampa cria criadouros. A falta de água tratada aumenta as doenças diarreicas; a fumaça das queimadas piora as doenças respiratórias.</span></div>
+          <div class="frio"><b>Frio e tempo seco</b><span>No outono e no inverno, as pessoas ficam mais em lugares fechados e os vírus respiratórios (influenza, VSR, covid-19) circulam mais.</span></div>
+        </div>
+        <p class="nota">Esses efeitos são descritos na literatura científica e pela Organização Mundial da Saúde. Cada situação local depende de muitos fatores. Texto em revisão pela equipe de saúde.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- OUTRAS DOENÇAS -->
+  <section class="aba" id="aba-outras" hidden>
+    <div class="cab">
+      <h2>Outras doenças · dados para análise</h2>
+      <p class="lede">Nesta aba ficarão séries de outras doenças de notificação obrigatória, por estado e por município, para consulta e download. Diferente das abas anteriores, ela não acompanha a semana: essas bases são publicadas pelo Ministério da Saúde com meses de atraso, e os dados do ano corrente são preliminares.</p>
+    </div>
+    <div class="cartao">
+      <h3>Em preparação</h3>
+      <div class="planejado">
+        <div><b>Leptospirose</b><span>Ligada a enchentes e alagamentos. Fonte: SINAN.</span></div>
+        <div><b>Malária</b><span>Concentrada na Amazônia, sensível à chuva e ao nível dos rios. Fonte: SIVEP-Malária.</span></div>
+        <div><b>Tuberculose e hanseníase</b><span>Doenças crônicas ligadas às condições de vida. Fonte: SINAN.</span></div>
+        <div><b>Sífilis</b><span>Adquirida, em gestante e congênita. Fonte: SINAN.</span></div>
+        <div><b>Cobertura vacinal</b><span>Por vacina e por município. Fonte: Programa Nacional de Imunizações.</span></div>
+      </div>
+      <p class="nota">Cada série vai mostrar a data da extração e se os dados são preliminares ou finais. Só entram contagens agregadas; nenhum dado de pessoas.</p>
+    </div>
+  </section>
+
+  <!-- NOTÍCIAS -->
+  <section class="aba" id="aba-noticias" hidden>
+    <div class="cab">
+      <h2>Notícias</h2>
+      <p class="lede">Manchetes dos últimos 14 dias sobre arboviroses, doenças respiratórias, vacinação e clima e saúde, com link para o veículo. A marcação de estado e tema é automática, pela manchete.</p>
+    </div>
+    <div class="controles">
+      <span><span class="ctl-label">Tema</span><span class="seg" id="ctl-not-tema"><button type="button" data-v="" aria-pressed="true">Todos</button><button type="button" data-v="arboviroses" aria-pressed="false">Arboviroses</button><button type="button" data-v="respiratorias" aria-pressed="false">Respiratórias</button><button type="button" data-v="vacinacao" aria-pressed="false">Vacinação</button><button type="button" data-v="clima-saude" aria-pressed="false">Clima e saúde</button></span></span>
+      <span><span class="ctl-label">Estado</span><select id="sel-not-uf" aria-label="Estado"><option value="">Todos</option></select></span>
+      <input type="search" id="busca-not" placeholder="Buscar na manchete" aria-label="Buscar na manchete">
+    </div>
+    <div class="cartao">
+      <div class="nota" id="conta-not"></div>
+      <div class="noticias" id="lista-noticias"></div>
+      <button class="btn mais" type="button" id="mais-not" hidden>Mostrar mais</button>
+    </div>
+  </section>
+
+  <!-- DADOS E MÉTODO -->
+  <section class="aba" id="aba-sobre" hidden>
+    <button class="btn voltar" type="button" id="btn-voltar">← Voltar ao painel</button>
+    <div class="grade">
+      <div class="cartao c12 repo">
+        <div class="texto" style="gap:6px">
+          <h2>Código e dados abertos</h2>
+          <p class="lede">Todo o código de coleta e tratamento fica no GitHub, para consulta e para quem quiser refazer as análises.</p>
+        </div>
+        <a class="btn-repo" href="__REPO__" target="_blank" rel="noopener">Ver repositório no GitHub →</a>
+      </div>
+      <div class="cartao c12 texto">
+        <h2>De onde vêm os dados</h2>
+        <ul>
+          <li><b>Dengue, chikungunya e zika:</b> <a href="https://info.dengue.mat.br/" target="_blank" rel="noopener noreferrer">InfoDengue</a> (Fiocruz e Fundação Getulio Vargas), pela plataforma <a href="https://mosqlimate.org/" target="_blank" rel="noopener noreferrer">Mosqlimate</a>. Os indicadores são calculados pelo InfoDengue a partir das notificações do SINAN (Ministério da Saúde) e de dados de clima, para cada município e semana.</li>
+          <li><b>Doenças respiratórias (SRAG):</b> SIVEP-Gripe, Ministério da Saúde, no <a href="https://dadosabertos.saude.gov.br/dataset/srag-2019-a-2026" target="_blank" rel="noopener noreferrer">Portal de Dados Abertos do SUS</a> (atualização semanal). A plataforma conta os casos e óbitos por estado de residência, semana de início dos sintomas, vírus e faixa etária.</li>
+          <li><b>Clima:</b> <a href="https://ladriasces.github.io/Monitor-El-Nino/" target="_blank" rel="noopener noreferrer">Monitor El Niño</a>, também do LADRI (NOAA, NASA POWER), por região imediata do IBGE.</li>
+          <li><b>População:</b> IBGE, estimativas da população residente (tabela 6579 do SIDRA).</li>
+          <li><b>Notícias:</b> <a href="https://www.gdeltproject.org/" target="_blank" rel="noopener noreferrer">GDELT Project</a> (manchetes em português de veículos brasileiros) e canais RSS da Agência Brasil (EBC), da Agência Fiocruz e da ONU News. A plataforma mostra só a manchete, o veículo, a data e o link para a notícia original.</li>
+          <li><b>Mapas:</b> IBGE (estados, regiões imediatas e municípios).</li>
+        </ul>
+        <h3>Como ler os números</h3>
+        <ul>
+          <li><b>Semana epidemiológica:</b> de domingo a sábado, numerada de 1 a 52 (ou 53) em cada ano, como faz o Ministério da Saúde. Os casos são contados pela semana em que os sintomas começaram.</li>
+          <li><b>Dados preliminares:</b> um caso leva dias ou semanas para entrar no sistema. Por isso as últimas semanas sempre parecem ter menos casos do que terão. No gráfico de SRAG, as 4 semanas mais recentes aparecem mais claras e ficam fora do cálculo da tendência.</li>
+          <li><b>Casos estimados (arboviroses):</b> o InfoDengue estima quantos casos de cada semana ainda serão notificados (técnica chamada <i>nowcasting</i>) e mostra a estimativa com um intervalo de incerteza.</li>
+          <li><b>Incidência:</b> casos por 100 mil habitantes. Permite comparar lugares com populações diferentes.</li>
+          <li><b>Níveis de alerta do InfoDengue:</b> verde (condições climáticas desfavoráveis ao mosquito e poucos casos), amarelo (clima favorável ao mosquito), laranja (transmissão sustentada, Rt acima de 1 por três semanas) e vermelho (incidência acima do limiar epidêmico do município). Os níveis são calculados pelo InfoDengue, não pelo LADRI.</li>
+          <li><b>Rt:</b> número de reprodução, quantas pessoas, em média, cada caso infecta. Acima de 1, os casos tendem a crescer.</li>
+          <li><b>Tendência da SRAG:</b> soma das 3 últimas semanas consolidadas contra as 3 anteriores. "Em alta" a partir de +10%; "em queda" a partir de −10%; "estável" no meio. Com menos de 10 casos, a tendência não é calculada.</li>
+          <li><b>Comparação da SRAG:</b> a faixa cinza mostra o menor e o maior número de casos de cada semana em 2023, 2024 e 2025 (anos depois da fase de emergência da covid-19).</li>
+          <li><b>Vírus:</b> a classificação segue o campo de classificação final do SIVEP-Gripe; o VSR é separado entre os "outros vírus" pelo exame positivo (RT-PCR ou antígeno). Casos sem exame ou com exame negativo ficam como "não especificado"; casos ainda sem classificação, como "em investigação".</li>
+        </ul>
+        <h3>Limites e responsabilidade</h3>
+        <p>Esta é uma plataforma de informação e de educação. Ela <b>não substitui a vigilância em saúde</b> das secretarias municipais e estaduais nem do Ministério da Saúde, e não faz previsões próprias. Os níveis de alerta mostrados são os do InfoDengue. Em caso de sintomas, procure uma unidade de saúde.</p>
+        <p>Os textos de interpretação são revisados por profissionais da área da saúde da ASCES-UNITA antes da publicação.</p>
+        <h3>Atualização</h3>
+        <p>Uma rotina automática no GitHub confere as fontes várias vezes por dia, recalcula os indicadores, confere os dados e publica o site quando há semana nova. As notícias são atualizadas a cada hora. Se uma fonte estiver fora do ar, o site mantém os últimos dados dela e mostra a data.</p>
+        <h3 id="privacidade">Privacidade e proteção de dados (LGPD)</h3>
+        <p>As bases do SIVEP-Gripe e do SINAN têm uma linha por pessoa notificada e contêm dados de saúde, que a LGPD trata como dados pessoais sensíveis. Esses arquivos são lidos apenas dentro da rotina automática, para contar os casos, e são apagados em seguida: <b>nenhum dado individual é guardado nem publicado</b>. O site mostra só totais por estado, município e semana, os mesmos níveis de agregação que o Ministério da Saúde e a Fiocruz já publicam.</p>
+        <p>O site não tem cadastro, não usa cookies e não guarda dados que identifiquem quem acessa. As visitas são contadas de forma anônima (GoatCounter), e o site é hospedado no GitHub Pages, que registra o endereço IP por segurança. O município escolhido em “Meu lugar” fica só no seu navegador, e a localização não sai do aparelho.</p>
+        <p>Responsável: LADRI/ASCES-UNITA. Dúvidas e pedidos sobre seus dados: <a href="mailto:ladri.lapri.asces@gmail.com">ladri.lapri.asces@gmail.com</a>.</p>
+        <details>
+          <summary>Ver detalhes</summary>
+          <p>Conforme a Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018):</p>
+          <ul>
+            <li><b>Responsável:</b> LADRI, Laboratório de Dados e Relações Internacionais da ASCES-UNITA (Caruaru, PE). Contato: <a href="mailto:ladri.lapri.asces@gmail.com">ladri.lapri.asces@gmail.com</a>.</li>
+            <li><b>Dados de saúde:</b> só dados públicos, publicados pelo Ministério da Saúde e pela Fiocruz para pesquisa e transparência. Finalidade: informação à população e pesquisa acadêmica (art. 7º, IV e art. 11, II, c; art. 26). Os arquivos com uma linha por pessoa são processados de forma transitória, sem cópia; o site recebe apenas contagens agregadas.</li>
+            <li><b>Contagem de acessos:</b> <a href="https://www.goatcounter.com/help/privacy" target="_blank" rel="noopener noreferrer">GoatCounter</a>, que não guarda o IP nem identificadores de quem acessa, só totais (páginas e abas, origem, navegador, sistema, país, idioma e tela) e, quando alguém escolhe o “Meu lugar”, apenas o estado. Base legal: legítimo interesse (art. 7º, IX).</li>
+            <li><b>Hospedagem:</b> GitHub Pages (GitHub, Estados Unidos), que registra o endereço IP de quem acessa por segurança, conforme a <a href="https://docs.github.com/pt/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener noreferrer">declaração de privacidade do GitHub</a>. O LADRI não tem acesso a esses registros.</li>
+            <li><b>No seu aparelho:</b> o município escolhido fica apenas no seu navegador e pode ser apagado com “Esquecer meu lugar”. A localização só é usada com a sua autorização, no próprio aparelho.</li>
+            <li><b>Seus direitos (art. 18):</b> pedidos pelo e-mail do LADRI, que os encaminha ao encarregado de proteção de dados da ASCES-UNITA quando necessário. Você também pode recorrer à <a href="https://www.gov.br/anpd" target="_blank" rel="noopener noreferrer">Autoridade Nacional de Proteção de Dados (ANPD)</a>.</li>
+            <li><b>Segurança:</b> conexão protegida (HTTPS), política de segurança de conteúdo e verificação de integridade dos scripts. O site não tem banco de dados nem formulários.</li>
+          </ul>
+        </details>
+        <h3>Como esta plataforma foi feita</h3>
+        <p>Esta plataforma foi desenvolvida pelo LADRI com o auxílio do <b>Claude</b>, assistente de inteligência artificial da Anthropic, que ajudou a escrever o código de coleta, tratamento e visualização dos dados. A definição dos recortes e a revisão do conteúdo são da equipe do LADRI, com revisão de profissionais da saúde.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Fontes: InfoDengue (Fiocruz e FGV) e Mosqlimate; Ministério da Saúde, SIVEP-Gripe (Portal de Dados Abertos do SUS); Monitor El Niño (LADRI), com dados da NOAA e da NASA POWER; IBGE; <a href="https://www.gdeltproject.org/" target="_blank" rel="noopener noreferrer">GDELT Project</a>; Agência Brasil; Agência Fiocruz; ONU News.</span>
+    <span>Elaboração: LADRI — Laboratório de Dados e Relações Internacionais, ASCES-UNITA.</span>
+    <span class="redes">Contato:
+      <a href="https://www.instagram.com/ladri_asces/" target="_blank" rel="noopener" aria-label="Instagram do LADRI (@ladri_asces)" title="Instagram @ladri_asces"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><defs><radialGradient id="ig-2" cx="30%" cy="107%" r="150%"><stop offset="0" stop-color="#fdf497"/><stop offset=".05" stop-color="#fdf497"/><stop offset=".45" stop-color="#fd5949"/><stop offset=".6" stop-color="#d6249f"/><stop offset=".9" stop-color="#285aeb"/></radialGradient></defs><rect width="24" height="24" rx="6" fill="url(#ig-2)"/><rect x="5" y="5" width="14" height="14" rx="4" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="16.3" cy="7.7" r="1.05" fill="#fff"/></svg></a>
+      <a href="mailto:ladri.lapri.asces@gmail.com" aria-label="E-mail do LADRI (ladri.lapri.asces@gmail.com)" title="ladri.lapri.asces@gmail.com"><svg class="ico" viewBox="0 2.5 52 39.5" aria-hidden="true"><path fill="#4285f4" d="M3.6 42h8.4V21.6L0 12.6v25.8C0 40.4 1.6 42 3.6 42z"/><path fill="#34a853" d="M40 42h8.4c2 0 3.6-1.6 3.6-3.6V12.6l-12 9z"/><path fill="#fbbc04" d="M40 6v15.6l12-9V7.8c0-4.45-5.08-7-8.64-4.32z"/><path fill="#ea4335" d="M12 21.6V6l14 10.5L40 6v15.6L26 32.1z"/><path fill="#c5221f" d="M0 7.8v4.8l12 9V6L8.64 3.48C5.08.8 0 3.35 0 7.8z"/></svg></a>
+    </span>
+  </footer>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script src="js/d3.v7.9.0.min.js" integrity="sha512-vc58qvvBdrDR4etbxMdlTt4GBQk1qjvyORR2nrsPsFPyrs+/u5c3+1Ct6upOgdZoIl7eq6k3a1UPDSNAQi/32A=="></script>
+<script>
+const BASE = /*__BASE__*/null;
+const G = BASE.geo;
+const UFS = { RO: "Rondônia", AC: "Acre", AM: "Amazonas", RR: "Roraima", PA: "Pará", AP: "Amapá", TO: "Tocantins", MA: "Maranhão", PI: "Piauí", CE: "Ceará", RN: "Rio Grande do Norte", PB: "Paraíba", PE: "Pernambuco", AL: "Alagoas", SE: "Sergipe", BA: "Bahia", MG: "Minas Gerais", ES: "Espírito Santo", RJ: "Rio de Janeiro", SP: "São Paulo", PR: "Paraná", SC: "Santa Catarina", RS: "Rio Grande do Sul", MS: "Mato Grosso do Sul", MT: "Mato Grosso", GO: "Goiás", DF: "Distrito Federal" };
+const UF_ORDEM = Object.keys(UFS).sort((a, b) => UFS[a].localeCompare(UFS[b], "pt-BR"));
+const IMED = new Map(BASE.imed.map(([id, nome, uf]) => [id, { id, nome, uf }]));
+const MUNS = BASE.mun.map(([ibge, nome, uf, imed]) => ({ ibge, nome, uf, imed }));
+const MUN_IDX = new Map(MUNS.map(m => [m.ibge, m]));
+const D = {};   // dados da semana (docs/dados/*.json)
+
+/* ---------- utilidades ---------- */
+const fmtInt = new Intl.NumberFormat("pt-BR");
+const fmtN = (v, c = 1) => v == null ? "—" : v.toLocaleString("pt-BR", { minimumFractionDigits: c, maximumFractionDigits: c });
+const fI = v => v == null ? "—" : fmtInt.format(Math.round(v));
+const sinal = (v, c = 1, u = "") => v == null ? "—" : (v > 0 ? "+" : v < 0 ? "−" : "") + fmtN(Math.abs(v), c) + u;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const $ = s => document.querySelector(s);
+const el = (tag, attrs = {}, html = "") => { const e = document.createElement(tag); Object.assign(e, attrs); if (html) e.innerHTML = html; return e; };
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const urlSegura = u => /^https?:\/\//i.test(String(u || "").trim()) ? esc(String(u).trim()) : "#";
+const dataBR = (iso, ano = true) => { if (!iso) return "—"; const [a, m, d] = iso.slice(0, 10).split("-"); return ano ? `${d}/${m}/${a}` : `${d}/${m}`; };
+const horaBR = iso => iso && iso.length > 12 ? iso.slice(11, 16).replace(":", "h") : "";
+function relativo(iso) {
+  const h = (Date.now() - new Date(iso).getTime()) / 36e5;
+  if (h < 1) return "agora há pouco";
+  if (h < 24) return `há ${Math.round(h)} h`;
+  const d = Math.round(h / 24);
+  return d === 1 ? "ontem" : `há ${d} dias`;
+}
+const somaDias = (iso, n) => { const d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+// Semana epidemiológica "AAAASS" -> "SE 45 (08 a 14/11)"
+const seTxt = (cod, ini) => `SE ${cod % 100}${ini ? ` (${dataBR(ini, false)} a ${dataBR(somaDias(ini, 6), false)})` : ""}`;
+
+/* ---------- celular, zoom e tooltip (iguais aos outros painéis do LADRI) ---------- */
+const CELULAR = matchMedia("(max-width: 640px)");
+const TOQUE = matchMedia("(pointer: coarse)");
+const larguraGrafico = (box, padrao) => CELULAR.matches ? Math.max(280, Math.round(box.clientWidth || padrao)) : padrao;
+function ativarZoom(svg, g, box, W, H) {
+  let k = 1;
+  const ctl = el("div", { className: "zoom-ctl" }, `<button type="button" aria-label="Aproximar o mapa">+</button><button type="button" aria-label="Afastar o mapa">−</button><button type="button" aria-label="Ver o mapa inteiro">⟲</button>`);
+  const zoom = d3.zoom().scaleExtent([1, 16]).extent([[0, 0], [W, H]]).translateExtent([[0, 0], [W, H]])
+    .filter(ev => ev.type.startsWith("touch") ? (ev.touches.length > 1 || k > 1) : ev.type === "wheel" ? ev.ctrlKey : k > 1 && !ev.button)
+    .on("zoom", ev => { k = ev.transform.k; g.attr("transform", ev.transform); svg.style("touch-action", k > 1 ? "none" : "pan-y"); });
+  svg.call(zoom).style("touch-action", "pan-y");
+  const [mais, menos, voltar] = ctl.querySelectorAll("button");
+  mais.addEventListener("click", () => svg.transition().duration(250).call(zoom.scaleBy, 2));
+  menos.addEventListener("click", () => svg.transition().duration(250).call(zoom.scaleBy, .5));
+  voltar.addEventListener("click", () => svg.transition().duration(250).call(zoom.transform, d3.zoomIdentity));
+  box.append(ctl);
+}
+const tip = $("#tip");
+function mostrarTip(ev, html) {
+  if (CELULAR.matches && TOQUE.matches) {
+    tip.innerHTML = `<button type="button" class="tip-fechar" aria-label="Fechar">✕</button>` + html;
+    tip.classList.add("tip-fixo"); tip.hidden = false; return;
+  }
+  tip.classList.remove("tip-fixo");
+  tip.innerHTML = html; tip.hidden = false;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = ev.clientX + 14, y = ev.clientY + 14;
+  if (x + w > innerWidth - 8) x = ev.clientX - w - 14;
+  if (y + h > innerHeight - 8) y = ev.clientY - h - 14;
+  tip.style.left = x + "px"; tip.style.top = y + "px";
+}
+const esconderTip = () => { tip.hidden = true; };
+tip.addEventListener("click", ev => { if (ev.target.closest(".tip-fechar")) esconderTip(); });
+document.addEventListener("pointerdown", ev => { if (tip.classList.contains("tip-fixo") && !tip.hidden && !ev.target.closest(".tip") && !ev.target.closest("svg")) esconderTip(); });
+function linhaTip(cor, rot, val, tipo = "q") {
+  const m = cor ? (tipo === "l" ? `<i style="width:12px;height:3px;border-radius:2px;background:${cor};display:inline-block"></i>` : `<i style="width:9px;height:9px;border-radius:2px;background:${cor};display:inline-block"></i>`) : "";
+  return `<div class="ln"><span>${m}${rot}</span><span>${val}</span></div>`;
+}
+function kpis(alvo, itens) {
+  $(alvo).innerHTML = itens.map(k => `<div class="kpi"><span class="l">${k.cor ? `<i class="marca-cor" style="background:${k.cor}"></i>` : ""}${k.l}</span><span class="v num">${k.v}</span>${k.d ? `<span class="d">${k.d}</span>` : ""}</div>`).join("");
+}
+const semDados = (alvo, txt = "Os dados desta seção não puderam ser carregados agora. Tente de novo mais tarde.") => { $(alvo).innerHTML = `<div class="aviso-dados">${txt}</div>`; };
+
+/* ---------- escalas de cor ---------- */
+function divergente(dom, corNeg, corPos) {
+  const mid = css("--mid");
+  return d3.scaleDiverging([-dom, 0, dom], t => t < .5 ? d3.interpolateLab(corNeg, mid)(t * 2) : d3.interpolateLab(mid, corPos)((t - .5) * 2)).clamp(true);
+}
+function sequencialLog(max, cor) {   // incidência: escala logarítmica (a maioria dos lugares tem pouco, alguns têm muito)
+  const s = d3.scaleLog([1, Math.max(10, max)], [0, 1]).clamp(true);
+  return v => v == null ? css("--line") : v <= 0 ? css("--mid") : d3.interpolateLab(css("--mid"), cor)(Math.pow(s(Math.max(1, v)), .9));
+}
+function legendaRampa(alvo, esc, valores, rotulos, titulo) {
+  const stops = valores.map(v => esc(v));
+  $(alvo).innerHTML = `<div>${titulo}</div><div class="rampa" style="background:linear-gradient(90deg,${stops.join(",")})"></div><div class="ticks num">${rotulos.map(t => `<span>${t}</span>`).join("")}</div>`;
+}
+const NIVEIS = { 1: ["Verde", "--n1"], 2: ["Amarelo", "--n2"], 3: ["Laranja", "--n3"], 4: ["Vermelho", "--n4"] };
+const corNivel = n => NIVEIS[n] ? css(NIVEIS[n][1]) : css("--line");
+const chipNivel = n => NIVEIS[n] ? `<span class="nivel"><i style="background:var(${NIVEIS[n][1]})"></i>${NIVEIS[n][0]}</span>` : `<span class="nivel">sem dados</span>`;
+const chipsNiveis = (extra = "") => Object.entries(NIVEIS).map(([n, [nome, c]]) => `<span class="chip"><i style="background:var(${c})"></i>${nome}</span>`).join("") + `<span class="chip"><i style="background:var(--line)"></i>Sem dados</span>` + extra;
+
+/* ---------- mapas ---------- */
+function desenhaMapa(alvo, geo, { W = 900, H = 820, getObj, cor, tip: tipFn, onClick, contorno, destaque }) {
+  const box = $(alvo); box.innerHTML = "";
+  const proj = d3.geoMercator().fitExtent([[10, 10], [W - 10, H - 10]], geo);
+  const path = d3.geoPath(proj);
+  const svg = d3.select(box).append("svg").attr("viewBox", `0 0 ${W} ${H}`);
+  const g = svg.append("g");
+  const feats = g.selectAll("path.feat").data(geo.features).join("path").attr("class", f => "feat" + (destaque && f.properties.id === destaque ? " meu" : "")).attr("d", path)
+    .attr("fill", f => { const o = getObj(f.properties.id); return o != null ? cor(o, f.properties.id) : css("--line"); })
+    .on("mousemove", (ev, f) => { const h = tipFn && tipFn(f.properties.id, getObj(f.properties.id)); if (h) mostrarTip(ev, h); })
+    .on("mouseleave", esconderTip)
+    .on("click", (ev, f) => { if (onClick) { feats.classed("sel", x => x === f); onClick(f.properties.id); } });
+  if (contorno) g.append("path").datum(contorno).attr("class", "contorno").attr("d", path);
+  feats.filter(".meu").raise();
+  if (CELULAR.matches) ativarZoom(svg, g, box, W, H);
+  return { svg, g, feats, path, proj, W, H };
+}
+const UF_CONTORNO = { type: "FeatureCollection", features: G.uf.features };
+const featuresUF = (geo, uf, campo = f => f.properties.id) => ({ type: "FeatureCollection", features: geo.features.filter(f => (MUN_IDX.get(campo(f)) || IMED.get(campo(f)) || {}).uf === uf) });
+
+// Malha dos municípios: arquivo separado (geo/municipios.json), carregado só quando um mapa precisa dele
+let GEO_MUN = null;
+async function malhaMunicipios() {
+  if (!GEO_MUN) GEO_MUN = fetch(`geo/municipios.json?v=${VERSAO_GEO}`).then(r => r.ok ? r.json() : null).catch(() => null);
+  return GEO_MUN;
+}
+
+/* ---------- Meu lugar ---------- */
+let LUGAR = null;
+try { const s = JSON.parse(localStorage.getItem("lugar-saude") || "null"); if (s && MUN_IDX.has(s)) LUGAR = MUN_IDX.get(s); } catch (e) {}
+const semAcento = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+MUNS.forEach(m => { m.chave = semAcento(m.nome); });
+function buscarMunicipios(q) {
+  const k = semAcento(q.trim());
+  if (k.length < 2) return [];
+  const comeca = [], contem = [];
+  for (const m of MUNS) {
+    const i = m.chave.indexOf(k);
+    if (i === 0) comeca.push(m); else if (i > 0 && m.chave[i - 1] === " ") contem.push(m);
+  }
+  const ord = (a, b) => a.nome.length - b.nome.length || a.nome.localeCompare(b.nome, "pt-BR");
+  return [...comeca.sort(ord), ...contem.sort(ord)].slice(0, 8);
+}
+const LUPA = `<svg class="lupa" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 2a8 8 0 0 1 6.32 12.9l5.39 5.4-1.41 1.4-5.4-5.39A8 8 0 1 1 10 2zm0 2a6 6 0 1 0 0 12 6 6 0 0 0 0-12z"/></svg>`;
+let idBusca = 0;
+function montarBusca(box) {
+  if (!box) return;
+  const id = "sug-" + (++idBusca);
+  box.classList.add("busca-lugar");
+  box.innerHTML = `${LUPA}<input type="search" placeholder="Digite seu município (ex.: Caruaru)" autocomplete="off" spellcheck="false" role="combobox" aria-label="Buscar município" aria-autocomplete="list" aria-expanded="false" aria-controls="${id}"><ul class="sugestoes" id="${id}" role="listbox" hidden></ul>`;
+  const inp = box.querySelector("input"), ul = box.querySelector("ul");
+  let lista = [], ativo = -1;
+  const marcar = (nome, q) => { const i = semAcento(nome).indexOf(semAcento(q.trim())); return i < 0 ? esc(nome) : esc(nome.slice(0, i)) + "<mark>" + esc(nome.slice(i, i + q.trim().length)) + "</mark>" + esc(nome.slice(i + q.trim().length)); };
+  const fechar = () => { ul.hidden = true; inp.setAttribute("aria-expanded", "false"); ativo = -1; };
+  const desenhar = () => {
+    if (!inp.value.trim()) return fechar();
+    lista = buscarMunicipios(inp.value);
+    ul.innerHTML = lista.length ? lista.map((m, i) => `<li role="option" id="${id}-${i}" data-ibge="${m.ibge}" aria-selected="${i === ativo}"><span>${marcar(m.nome, inp.value)}</span><span class="uf">${UFS[m.uf]}</span></li>`).join("")
+      : `<li class="vazio">${inp.value.trim().length < 2 ? "Continue digitando…" : "Nenhum município com esse nome"}</li>`;
+    ul.hidden = false; inp.setAttribute("aria-expanded", "true");
+    inp.setAttribute("aria-activedescendant", ativo >= 0 ? `${id}-${ativo}` : "");
+  };
+  inp.addEventListener("input", () => { ativo = 0; desenhar(); });
+  inp.addEventListener("keydown", ev => {
+    if (ev.key === "ArrowDown" && lista.length) { ev.preventDefault(); ativo = (ativo + 1) % lista.length; desenhar(); }
+    else if (ev.key === "ArrowUp" && lista.length) { ev.preventDefault(); ativo = (ativo - 1 + lista.length) % lista.length; desenhar(); }
+    else if (ev.key === "Enter" && lista.length) { ev.preventDefault(); definirLugar(lista[Math.max(0, ativo)].ibge); }
+    else if (ev.key === "Escape") { fechar(); }
+  });
+  ul.addEventListener("mousedown", ev => { const li = ev.target.closest("li[data-ibge]"); if (li) { ev.preventDefault(); definirLugar(li.dataset.ibge); } });
+  inp.addEventListener("blur", () => setTimeout(fechar, 120));
+  return inp;
+}
+function abrirPainelLugar(abrir = true) {
+  const p = $("#lugar-painel");
+  p.hidden = !abrir; $("#btn-lugar").setAttribute("aria-expanded", String(abrir));
+  $("#lugar-limpar").hidden = !LUGAR;
+  if (abrir) { window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => { const i = p.querySelector("input"); if (i) { i.value = ""; i.focus(); } }, 50); }
+}
+function initLugar() {
+  montarBusca($("#lugar-painel [data-busca-lugar]"));
+  $("#btn-lugar").addEventListener("click", () => abrirPainelLugar($("#lugar-painel").hidden));
+  $("#lugar-fechar").addEventListener("click", () => abrirPainelLugar(false));
+  $("#lugar-limpar").addEventListener("click", () => definirLugar(null));
+  document.addEventListener("keydown", ev => { if (ev.key === "Escape" && !$("#lugar-painel").hidden) abrirPainelLugar(false); });
+  atualizarBotaoLugar();
+}
+function atualizarBotaoLugar() {
+  $("#btn-lugar-txt").textContent = LUGAR ? `${LUGAR.nome} (${LUGAR.uf})` : "Escolha seu município";
+  $("#btn-lugar").classList.toggle("vazio", !LUGAR);
+}
+let tempoAviso = null;
+function avisoLugar(txt) {
+  let a = $("#aviso-lugar");
+  if (!a) { a = el("div", { id: "aviso-lugar", className: "aviso-lugar", role: "status" }); document.body.append(a); }
+  a.textContent = txt; a.classList.add("ver");
+  clearTimeout(tempoAviso); tempoAviso = setTimeout(() => a.classList.remove("ver"), 3200);
+}
+function definirLugar(ibge, origem = "") {
+  LUGAR = ibge ? MUN_IDX.get(ibge) : null;
+  try { ibge ? localStorage.setItem("lugar-saude", JSON.stringify(ibge)) : localStorage.removeItem("lugar-saude"); } catch (e) {}
+  abrirPainelLugar(false);
+  atualizarBotaoLugar();
+  if (LUGAR) { estadoArbo.uf = LUGAR.uf; estadoArbo.sel = LUGAR.ibge; estadoSrag.uf = LUGAR.uf; estadoNot.uf = LUGAR.uf; $("#sel-not-uf").value = LUGAR.uf; $("#sel-arbo-uf").value = LUGAR.uf; $("#sel-srag-uf").value = LUGAR.uf; }
+  try { window.goatcounter && window.goatcounter.count && window.goatcounter.count({ path: "meu-lugar-" + (LUGAR ? LUGAR.uf : "limpo"), title: "Meu lugar", event: true }); } catch (e) {}
+  rerender();
+  avisoLugar(LUGAR ? `Pronto! Mostrando os dados de ${LUGAR.nome} (${LUGAR.uf})${origem}` : "Meu lugar esquecido");
+}
+// "Usar minha localização": a posição fica no aparelho; serve só para achar o município na malha do IBGE
+async function usarLocalizacao(botao) {
+  if (!("geolocation" in navigator)) return avisoLugar("Este navegador não informa a localização. Digite o nome do município.");
+  const txt = botao ? botao.innerHTML : "";
+  if (botao) { botao.disabled = true; botao.lastChild.textContent = "Procurando…"; }
+  const voltar = () => { if (botao) { botao.disabled = false; botao.innerHTML = txt; } };
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const p = [pos.coords.longitude, pos.coords.latitude];
+    const geo = await malhaMunicipios();
+    voltar();
+    const f = geo && geo.features.find(f => d3.geoContains(f, p));
+    if (f && MUN_IDX.has(f.properties.id)) return definirLugar(f.properties.id, ". Se não for o seu município, digite o nome dele.");
+    avisoLugar("Não achamos sua localização no Brasil. Digite o nome do município.");
+  }, () => { voltar(); avisoLugar("Não foi possível usar a localização. Digite o nome do município."); }, { timeout: 10000, maximumAge: 600000 });
+}
+function caixaEscolherLugar() {
+  return `<div class="escolher-lugar"><b>Onde você está?</b><span>Escolha seu município para ver aqui a dengue, a chikungunya, a zika, as doenças respiratórias do seu estado e o clima da sua região.</span><div data-busca-lugar></div><div><button class="btn" type="button" data-acao="gps">Usar minha localização</button></div></div>`;
+}
+
+/* ---------- dados auxiliares ---------- */
+const ARBO_I = () => Object.fromEntries((D.arbo ? D.arbo.cols : []).map((c, i) => [c, i]));
+const DOENCA_NOME = { dengue: "Dengue", chikungunya: "Chikungunya", zika: "Zika" };
+const TEND = { alta: "em alta", queda: "em queda", estavel: "estável" };
+const tendTxt = t => t ? `<span class="tendencia ${t}">${TEND[t]}</span>` : "—";
+const POR_UF = new Map();   // séries municipais das arboviroses (docs/dados/arbo/<UF>.json), lidas sob demanda
+function serieUF(uf) {
+  if (!POR_UF.has(uf)) POR_UF.set(uf, fetch(`dados/arbo/${uf}.json?v=${VERSAO}`).then(r => r.ok ? r.json() : null).catch(() => null));
+  return POR_UF.get(uf);
+}
+const somaSRAG = (T, i) => Object.values(T.casos).reduce((s, a) => s + (a[i] || 0), 0);
+const GRUPOS_COR = { covid: "--covid", flu_a: "--flu-a", flu_b: "--flu-b", flu_nd: "--flu-nd", vsr: "--vsr", outros_virus: "--outros", outro_agente: "--agente-out", nao_especificado: "--nao-esp", em_investigacao: "--invest" };
+
+/* ================================================================ CABEÇALHO */
+function hero() {
+  const A = D.arbo, S = D.srag;
+  const dg = A && A.dengue, br = dg && dg.territorios.BR;
+  const sb = S && S.territorios.BR.resumo;
+  const altos = br ? br.niveis[2] + br.niveis[3] : null;
+  const manchete = br ? (altos ? `${fI(altos)} ${altos === 1 ? "município está" : "municípios estão"} em alerta laranja ou vermelho para dengue` : "Nenhum município em alerta laranja ou vermelho para dengue")
+    : "Acompanhe a dengue e as doenças respiratórias no Brasil";
+  const bloco = (cor, t, v, d) => `<div class="hero-bloco" style="border-top-color:var(${cor})"><span class="t">${t}</span><span class="v num">${v}</span><span class="d">${d}</span></div>`;
+  const ch = A && A.chikungunya && A.chikungunya.territorios.BR;
+  $("#hero").innerHTML = `<div class="hero-texto">
+      <div class="eyebrow">${dg ? `Semana epidemiológica ${dg.se % 100} · ${dataBR(dg.inicio)} a ${dataBR(somaDias(dg.inicio, 6))}` : "Situação da semana"}</div>
+      <div class="manchete">${manchete}</div>
+      <div class="hero-blocos">
+        ${bloco("--n4", "Dengue", br ? `${fmtN(br.inc_4s, 1)}` : "—", "casos estimados por 100 mil hab. em 4 semanas")}
+        ${bloco("--n3", "Chikungunya", ch ? `${fmtN(ch.inc_4s, 1)}` : "—", "casos estimados por 100 mil hab. em 4 semanas")}
+        ${bloco("--vsr", "SRAG no Brasil", sb ? (TEND[sb.tendencia] || "—") : "—", sb ? `${sinal(sb.var_pct, 0, "%")} nas semanas consolidadas; ${fI(sb.casos_4s)} casos em 4 semanas` : "")}
+      </div>
+      <span class="selo">Dados oficiais e preliminares: as últimas semanas ainda vão subir</span>
+    </div>
+    <div class="hero-mapa" id="hero-mapa" role="img" aria-label="Mapa do Brasil com a incidência de dengue por estado"></div>`;
+  if (br) {
+    const esc_ = sequencialLog(d3.max(Object.values(dg.territorios), t => t.inc_4s || 0), css("--inc"));
+    const W = 330, H = 300, geo = G.uf;
+    const proj = d3.geoMercator().fitExtent([[4, 4], [W - 4, H - 4]], geo), path = d3.geoPath(proj);
+    const svg = d3.select("#hero-mapa").append("svg").attr("viewBox", `0 0 ${W} ${H}`);
+    svg.selectAll("path").data(geo.features).join("path").attr("d", path)
+      .attr("fill", f => { const t = dg.territorios[f.properties.id]; return t ? esc_(t.inc_4s) : css("--line"); })
+      .on("mousemove", (ev, f) => { const t = dg.territorios[f.properties.id]; mostrarTip(ev, `<b>${UFS[f.properties.id]}</b>` + (t ? linhaTip(null, "Dengue, 4 semanas", `${fmtN(t.inc_4s, 1)} por 100 mil`) : "sem dados")); })
+      .on("mouseleave", esconderTip);
+  }
+}
+
+/* ================================================================ ABA AGORA */
+function agora() {
+  const A = D.arbo, S = D.srag;
+  const dg = A && A.dengue && A.dengue.territorios.BR;
+  const sb = S && S.territorios.BR.resumo;
+  kpis("#kpis-agora", [
+    { l: "Municípios em alerta vermelho (dengue)", v: dg ? fI(dg.niveis[3]) : "—", d: dg ? `${fI(dg.niveis[2])} em laranja, de ${fI(dg.n_mun)} com dados` : "", cor: css("--n4") },
+    { l: "Dengue no Brasil, últimas 4 semanas", v: dg ? fmtN(dg.inc_4s, 1) : "—", d: "casos estimados por 100 mil habitantes" },
+    { l: "SRAG no Brasil em 2026", v: sb ? fI(sb.casos_ano) : "—", d: sb ? `${fI(sb.obitos_ano)} óbitos; tendência ${TEND[sb.tendencia] || "—"}` : "" },
+    { l: "Vírus mais frequente na SRAG", v: sb && sb.principal ? esc(S.grupos[sb.principal]) : "—", d: "entre covid-19, influenza e VSR, nas últimas 8 semanas consolidadas", cor: sb && sb.principal ? css(GRUPOS_COR[sb.principal]) : null },
+  ]);
+  meuLugar(); mapaAgora(); noticiasAgora(); tabelaAtualizacao();
+}
+async function meuLugar() {
+  const box = $("#meu-lugar");
+  if (!LUGAR) { box.innerHTML = caixaEscolherLugar(); montarBusca(box.querySelector("[data-busca-lugar]")); return; }
+  const A = D.arbo, I = ARBO_I(), S = D.srag;
+  const cartaoDoenca = d => {
+    const x = A && A[d] && A[d].mun[LUGAR.ibge];
+    if (!x) return `<div class="meu-doenca"><b>${DOENCA_NOME[d]}</b><span class="muted">${A && A[d] ? "sem dados deste município nesta semana" : "o InfoDengue não publicou dados recentes"}</span></div>`;
+    return `<div class="meu-doenca"><b>${DOENCA_NOME[d]}</b>${chipNivel(x[I.nivel])}<span class="nota">${fI(x[I.est])} casos estimados na ${seTxt(A[d].se)} (${fI(x[I.casos])} já notificados)</span><span class="nota">${fmtN(x[I.inc], 1)} por 100 mil hab. · Rt ${fmtN(x[I.rt], 2)}</span></div>`;
+  };
+  const sr = S && S.territorios[LUGAR.uf], C = D.clima && D.clima.regioes[LUGAR.imed], ci = D.clima && Object.fromEntries(D.clima.cols.map((c, i) => [c, i]));
+  box.innerHTML = `<div class="cartao-cab"><div><div class="eyebrow">Meu lugar</div><h3 style="font-size:1.4rem">${esc(LUGAR.nome)} (${LUGAR.uf})</h3></div><button class="btn" type="button" data-acao="lugar">Trocar</button></div>
+    <div class="meu-doencas">${["dengue", "chikungunya", "zika"].map(cartaoDoenca).join("")}</div>
+    <div class="grafico" id="g-meu"></div>
+    <div class="linhas">
+      ${sr ? `<div><span>SRAG em ${UFS[LUGAR.uf]}, 4 semanas consolidadas</span><span>${fI(sr.resumo.casos_4s)} casos · ${tendTxt(sr.resumo.tendencia)}</span></div>` : ""}
+      ${C ? `<div><span>Temperatura na região de ${esc(IMED.get(LUGAR.imed).nome)}, 30 dias</span><span>${sinal(C[ci.t30_anom], 1, " °C")} da média</span></div><div><span>Chuva na região, 30 dias</span><span>${sinal(C[ci.p30_anom], 0, "%")} da média</span></div>` : ""}
+    </div>`;
+  const s = await serieUF(LUGAR.uf), dd = s && s.doencas.dengue && s.doencas.dengue[LUGAR.ibge];
+  if (dd) graficoArbo("#g-meu", s.ses.slice(-26), dd[0].slice(-26), dd[1].slice(-26), "Dengue em " + LUGAR.nome, 160);
+}
+async function mapaAgora() {
+  const A = D.arbo;
+  if (!A || !A.dengue) return semDados("#mapa-agora");
+  const geo = await malhaMunicipios(), I = ARBO_I(), M = A.dengue.mun;
+  if (!geo) return semDados("#mapa-agora");
+  $("#nota-mapa-agora").textContent = seTxt(A.dengue.se, A.dengue.inicio);
+  desenhaMapa("#mapa-agora", geo, { W: 600, H: 560, getObj: id => M[id] || null, cor: o => corNivel(o[I.nivel]), contorno: UF_CONTORNO, destaque: LUGAR && LUGAR.ibge,
+    tip: (id, o) => { const m = MUN_IDX.get(id); return m && `<b>${esc(m.nome)} (${m.uf})</b>` + (o ? linhaTip(corNivel(o[I.nivel]), "Nível", NIVEIS[o[I.nivel]] ? NIVEIS[o[I.nivel]][0] : "—") + linhaTip(null, "Casos estimados", fI(o[I.est])) : "sem dados"); } });
+  $("#leg-agora").innerHTML = chipsNiveis();
+}
+function itemNoticia(n) {
+  const ufs = n.ufs.map(u => `<span class="tag${LUGAR && LUGAR.uf === u ? " meu" : ""}">${u}</span>`).join("");
+  const temas = (n.temas || []).map(t => `<span class="tag">${esc((D.noticias.temas || {})[t] || t)}</span>`).join("");
+  return `<div class="noticia"><a href="${urlSegura(n.link)}" target="_blank" rel="noopener noreferrer">${esc(n.titulo)}</a><div class="q"><span>${esc(n.fonte || "")}</span><span>${relativo(n.data)}</span>${ufs}${temas}</div></div>`;
+}
+const REGIAO_UF = { RO: "Norte", AC: "Norte", AM: "Norte", RR: "Norte", PA: "Norte", AP: "Norte", TO: "Norte", MA: "Nordeste", PI: "Nordeste", CE: "Nordeste", RN: "Nordeste", PB: "Nordeste", PE: "Nordeste", AL: "Nordeste", SE: "Nordeste", BA: "Nordeste", MG: "Sudeste", ES: "Sudeste", RJ: "Sudeste", SP: "Sudeste", PR: "Sul", SC: "Sul", RS: "Sul", MS: "Centro-Oeste", MT: "Centro-Oeste", GO: "Centro-Oeste", DF: "Centro-Oeste" };
+const doLugar = (n, uf) => n.ufs.includes(uf) || (n.regioes || []).includes(REGIAO_UF[uf]);
+function noticiasAgora() {
+  if (!D.noticias) return semDados("#noticias-agora");
+  const todas = D.noticias.noticias;
+  let lista = LUGAR ? todas.filter(n => doLugar(n, LUGAR.uf)) : [];
+  $("#tit-noticias-agora").textContent = LUGAR && lista.length ? `Últimas notícias · ${UFS[LUGAR.uf]}` : "Últimas notícias";
+  if (!lista.length) lista = todas;
+  $("#noticias-agora").innerHTML = lista.slice(0, 6).map(itemNoticia).join("") || `<p class="muted">Nenhuma notícia.</p>`;
+}
+const FONTES = [
+  ["arbo", "Dengue, chikungunya e zika (InfoDengue)", () => D.arbo && D.arbo.dengue && `${seTxt(D.arbo.dengue.se, D.arbo.dengue.inicio)}${D.arbo.dengue.versao ? ` · modelo de ${dataBR(D.arbo.dengue.versao)}` : ""}`],
+  ["srag", "Doenças respiratórias (SIVEP-Gripe)", () => D.srag && `extração de ${dataBR(D.srag.extracao)} · até a SE ${D.srag.se_fim}`],
+  ["clima", "Clima (Monitor El Niño)", () => D.clima && `observado até ${dataBR(D.clima.clima_fim)}`],
+  ["noticias", "Notícias", () => D.noticias && D.noticias.noticias[0] && `mais recente: ${relativo(D.noticias.noticias[0].data)}`],
+];
+function tabelaAtualizacao() {
+  const at = D.atualizacao || {};
+  $("#tab-atualizacao").innerHTML = `<thead><tr><th>Fonte</th><th>Dado mais recente</th><th>Atualizado pela plataforma</th></tr></thead><tbody>` +
+    FONTES.map(([k, nome, f]) => { const s = at[k] || {}; const ok = s.ok_hoje !== false;
+      return `<tr><td>${nome}</td><td>${f() || "—"}</td><td>${s.atualizado ? `${dataBR(s.atualizado)} ${horaBR(s.atualizado)}` : "—"}${ok ? "" : ` <span class="nivel"><i style="background:var(--n3)"></i>falhou na última tentativa, mantidos os dados anteriores</span>`}</td></tr>`; }).join("") + "</tbody>";
+}
+
+/* ================================================================ ABA ARBOVIROSES */
+const estadoArbo = { doenca: "dengue", ind: "nivel", uf: LUGAR ? LUGAR.uf : "", sel: LUGAR ? LUGAR.ibge : null };
+function graficoArbo(alvo, ses, c, e, titulo, altura = 240) {
+  const box = $(alvo); box.innerHTML = "";
+  if (!ses || !ses.length) return semDados(alvo, "Sem série para este lugar.");
+  const W = larguraGrafico(box, 1160), H = altura, mt = 10, mb = 24, ml = 44, mr = 8;
+  const x = d3.scaleBand(ses.map(String), [ml, W - mr]).padding(.18);
+  const max = d3.max([...c, ...e].filter(v => v != null)) || 1;
+  const y = d3.scaleLinear([0, max * 1.08], [H - mb, mt]).nice();
+  const svg = d3.select(box).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", titulo);
+  svg.append("g").attr("class", "grid").attr("transform", `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - ml - mr)).tickFormat("")).call(g => g.select(".domain").remove());
+  svg.append("g").attr("class", "eixo").attr("transform", `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickFormat(d => fmtInt.format(d))).call(g => g.select(".domain").remove());
+  const passo = Math.ceil(ses.length / (W < 500 ? 6 : 13));
+  svg.append("g").attr("class", "eixo").attr("transform", `translate(0,${H - mb})`).call(d3.axisBottom(x).tickValues(ses.filter((s, i) => i % passo === 0).map(String)).tickFormat(s => `${s % 100}/${String(s).slice(2, 4)}`));
+  const n = ses.length;
+  svg.append("g").selectAll("rect").data(ses.map((s, i) => [s, c[i], i])).join("rect")
+    .attr("x", d => x(String(d[0]))).attr("width", x.bandwidth()).attr("y", d => y(d[1] || 0)).attr("height", d => y(0) - y(d[1] || 0))
+    .attr("fill", css("--c4")).attr("opacity", d => d[2] >= n - 3 ? .5 : .85);
+  const linha = d3.line().defined(d => d[1] != null).x(d => x(String(d[0])) + x.bandwidth() / 2).y(d => y(d[1]));
+  svg.append("path").datum(ses.map((s, i) => [s, e[i]])).attr("fill", "none").attr("stroke", css("--inc")).attr("stroke-width", 2.2).attr("d", linha);
+  svg.append("rect").attr("x", ml).attr("y", mt).attr("width", W - ml - mr).attr("height", H - mt - mb).attr("fill", "transparent")
+    .on("mousemove", ev => { const [px] = d3.pointer(ev); const i = Math.max(0, Math.min(n - 1, Math.floor((px - ml) / x.step()))); mostrarTip(ev, `<b>${titulo}</b><div class="nota">Semana ${ses[i] % 100} de ${Math.floor(ses[i] / 100)}</div>` + linhaTip(css("--c4"), "Notificados", fI(c[i])) + linhaTip(css("--inc"), "Estimados", fI(e[i]), "l")); })
+    .on("mouseleave", esconderTip);
+}
+function arbo() {
+  const A = D.arbo;
+  if (!A || !A[estadoArbo.doenca]) { ["#mapa-arbo", "#g-arbo", "#det-arbo"].forEach(s => semDados(s, "Os dados de arboviroses ainda não estão disponíveis.")); $("#kpis-arbo").innerHTML = ""; $("#tab-arbo").innerHTML = ""; return; }
+  const X = A[estadoArbo.doenca], uf = estadoArbo.uf, T = X.territorios[uf || "BR"];
+  const nome = uf ? UFS[uf] : "Brasil";
+  kpis("#kpis-arbo", T ? [
+    { l: `Casos notificados no ano · ${nome}`, v: fI(T.casos_ano), d: T.semanas_ano < (X.se % 100) ? `nas ${T.semanas_ano} semanas disponíveis` : `até a ${seTxt(X.se)}` },
+    { l: "Incidência, últimas 4 semanas", v: fmtN(T.inc_4s, 1), d: "casos estimados por 100 mil habitantes" },
+    { l: "Municípios em alerta laranja", v: fI(T.niveis[2]), cor: css("--n3"), d: "transmissão sustentada" },
+    { l: "Municípios em alerta vermelho", v: fI(T.niveis[3]), cor: css("--n4"), d: "acima do limiar epidêmico" },
+  ] : []);
+  mapaArbo(); detalheArbo(); tabelaArbo();
+  $("#tit-serie-arbo").textContent = `${DOENCA_NOME[estadoArbo.doenca]} por semana · ${nome}`;
+  $("#leg-serie-arbo").innerHTML = `<span class="chip"><i style="background:var(--c4)"></i>Notificados</span><span class="chip"><i class="linha" style="background:var(--inc)"></i>Estimados</span>`;
+  if (T) graficoArbo("#g-arbo", A.ses, T.c, T.e, `${DOENCA_NOME[estadoArbo.doenca]} · ${nome}`);
+}
+async function mapaArbo() {
+  const A = D.arbo, X = A[estadoArbo.doenca], I = ARBO_I(), uf = estadoArbo.uf;
+  const geo0 = await malhaMunicipios();
+  if (!geo0) return semDados("#mapa-arbo");
+  const geo = uf ? featuresUF(geo0, uf) : geo0;
+  const M = X.mun;
+  $("#tit-mapa-arbo").textContent = estadoArbo.ind === "nivel" ? "Nível de alerta por município" : "Incidência por município";
+  $("#nota-mapa-arbo").textContent = seTxt(X.se, X.inicio);
+  const escInc = sequencialLog(500, css("--inc"));
+  const cor = o => estadoArbo.ind === "nivel" ? corNivel(o[I.nivel]) : escInc(o[I.inc]);
+  desenhaMapa("#mapa-arbo", geo, { W: 760, H: uf ? 620 : 700, getObj: id => M[id] || null, cor, contorno: uf ? null : UF_CONTORNO, destaque: LUGAR && LUGAR.ibge,
+    tip: (id, o) => { const m = MUN_IDX.get(id); return m && `<b>${esc(m.nome)} (${m.uf})</b>` + (o ? linhaTip(corNivel(o[I.nivel]), "Nível", NIVEIS[o[I.nivel]] ? NIVEIS[o[I.nivel]][0] : "—") + linhaTip(null, "Incidência (por 100 mil)", fmtN(o[I.inc], 1)) + linhaTip(null, "Casos estimados", fI(o[I.est])) + linhaTip(null, "Notificados", fI(o[I.casos])) : "sem dados"); },
+    onClick: id => { estadoArbo.sel = id; detalheArbo(); } });
+  if (estadoArbo.ind === "nivel") $("#leg-arbo").innerHTML = `<div class="chips">${chipsNiveis()}</div>`;
+  else { $("#leg-arbo").className = "legenda"; legendaRampa("#leg-arbo", escInc, [0.5, 1, 3, 10, 30, 100, 300, 500], ["0", "1", "10", "100", "500+"], "Casos estimados por 100 mil habitantes na semana"); }
+  if (estadoArbo.ind === "nivel") $("#leg-arbo").className = "";
+}
+async function detalheArbo() {
+  const box = $("#det-arbo"), A = D.arbo, X = A[estadoArbo.doenca], I = ARBO_I();
+  const m = estadoArbo.sel && MUN_IDX.get(estadoArbo.sel);
+  if (!m) { box.innerHTML = `<div class="eyebrow">Município</div><p class="muted">Clique em um município no mapa${LUGAR ? "" : " ou escolha o seu no topo da página"} para ver a série de casos dele.</p>`; return; }
+  const o = X.mun[m.ibge];
+  box.innerHTML = `<div class="eyebrow">${DOENCA_NOME[estadoArbo.doenca]} · ${seTxt(X.se, X.inicio)}</div><div class="nome">${esc(m.nome)} (${m.uf})</div>` +
+    (o ? `<div>${chipNivel(o[I.nivel])}</div><div class="linhas">
+      <div><span>Casos notificados</span><span>${fI(o[I.casos])}</span></div>
+      <div><span>Casos estimados (intervalo)</span><span>${fI(o[I.est])} (${fI(o[I.est_min])} a ${fI(o[I.est_max])})</span></div>
+      <div><span>Incidência (por 100 mil hab.)</span><span>${fmtN(o[I.inc], 1)}</span></div>
+      <div><span>Rt (chance de ser maior que 1)</span><span>${fmtN(o[I.rt], 2)} (${o[I.p_rt1] == null ? "—" : fmtN(100 * o[I.p_rt1], 0) + "%"})</span></div>
+      <div><span>Clima favorável ao mosquito</span><span>${o[I.receptivo] ? "sim" : "não"}</span></div>
+      <div><span>Temperatura média da semana</span><span>${fmtN(o[I.temp], 1)} °C</span></div>
+    </div>` : `<p class="muted">Sem dados do InfoDengue para este município nesta semana.</p>`) + `<div class="grafico" id="g-det-arbo"></div>`;
+  const s = await serieUF(m.uf), dd = s && s.doencas[estadoArbo.doenca] && s.doencas[estadoArbo.doenca][m.ibge];
+  if (dd) graficoArbo("#g-det-arbo", s.ses, dd[0], dd[1], `${DOENCA_NOME[estadoArbo.doenca]} em ${m.nome}`, 170);
+}
+function tabelaArbo() {
+  const X = D.arbo[estadoArbo.doenca];
+  const linhas = UF_ORDEM.filter(uf => X.territorios[uf]).map(uf => [uf, X.territorios[uf]]).sort((a, b) => (b[1].inc_4s || 0) - (a[1].inc_4s || 0));
+  const barra = n => { const t = d3.sum(n) || 1; return `<div class="barra-niveis">${n.map((v, i) => `<i style="width:${100 * v / t}%;background:var(--n${i + 1})"></i>`).join("")}</div>`; };
+  $("#tab-arbo").innerHTML = `<thead><tr><th>Estado</th><th>Incidência 4 sem.</th><th>Casos no ano</th><th>Vermelho</th><th>Laranja</th><th>Municípios por nível</th></tr></thead><tbody>` +
+    linhas.map(([uf, t]) => `<tr data-uf="${uf}"${LUGAR && LUGAR.uf === uf ? ' class="destaque"' : ""}><td>${UFS[uf]}</td><td>${fmtN(t.inc_4s, 1)}</td><td>${fI(t.casos_ano)}</td><td>${fI(t.niveis[3])}</td><td>${fI(t.niveis[2])}</td><td>${barra(t.niveis)}</td></tr>`).join("") + "</tbody>";
+}
+
+/* ================================================================ ABA SRAG */
+const estadoSrag = { uf: LUGAR ? LUGAR.uf : "BR", med: "casos" };
+function srag() {
+  const S = D.srag;
+  if (!S) { ["#g-srag", "#g-agentes", "#g-faixas", "#mapa-srag", "#tab-srag"].forEach(s => semDados(s)); return; }
+  const T = S.territorios[estadoSrag.uf], R = T.resumo, nome = estadoSrag.uf === "BR" ? "Brasil" : UFS[estadoSrag.uf];
+  $("#aviso-srag").innerHTML = `Dados do SIVEP-Gripe extraídos em ${dataBR(S.extracao)}, até a semana ${S.se_fim} (${dataBR(S.inicio_semanas[S.se_fim - 1])} a ${dataBR(somaDias(S.inicio_semanas[S.se_fim - 1], 6))}). As semanas ${S.se_consolidada + 1} a ${S.se_fim} ainda estão incompletas e vão aumentar.`;
+  kpis("#kpis-srag", [
+    { l: `Casos de SRAG em ${S.ano} · ${nome}`, v: fI(R.casos_ano), d: `${fI(R.obitos_ano)} óbitos` },
+    { l: "Últimas 4 semanas consolidadas", v: fI(R.casos_4s), d: `${fmtN(R.inc_4s, 1)} por 100 mil habitantes` },
+    { l: "Tendência", v: R.tendencia ? TEND[R.tendencia] : "—", d: R.var_pct != null ? `${sinal(R.var_pct, 0, "%")}: 3 semanas contra as 3 anteriores` : "poucos casos para calcular" },
+    { l: "Vírus mais frequente (8 semanas)", v: R.principal ? esc(S.grupos[R.principal]) : "—", d: `entre covid-19, influenza e VSR; ${fI(R.identificados_8s)} casos com algum vírus identificado`, cor: R.principal ? css(GRUPOS_COR[R.principal]) : null },
+  ]);
+  graficoSRAG(S, T, nome); barrasAgentes(S, R); barrasFaixas(S, R); mapaSRAG(S); tabelaSRAG(S);
+}
+function graficoSRAG(S, T, nome) {
+  const box = $("#g-srag"); box.innerHTML = "";
+  const obitos = estadoSrag.med === "obitos";
+  const n = T.obitos.length, ses = d3.range(1, n + 1), grupos = Object.keys(S.grupos);
+  $("#tit-g-srag").textContent = `${obitos ? "Óbitos" : "Casos"} de SRAG por semana · ${nome} · ${S.ano}`;
+  const W = larguraGrafico(box, 1160), H = CELULAR.matches ? 260 : 320, mt = 12, mb = 26, ml = 48, mr = 8;
+  const x = d3.scaleBand(ses.map(String), [ml, W - mr]).padding(.12);
+  const tot = ses.map(s => obitos ? T.obitos[s - 1] : somaSRAG(T, s - 1));
+  const ref = !obitos && T.ref, ant = !obitos ? T.anterior.slice(0, n) : null;
+  const max = d3.max([...tot, ...(ref ? ref.max.slice(0, n) : []), ...(ant || [])]) || 1;
+  const y = d3.scaleLinear([0, max * 1.06], [H - mb, mt]).nice();
+  const svg = d3.select(box).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", `SRAG por semana em ${nome}`);
+  svg.append("g").attr("class", "grid").attr("transform", `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(W - ml - mr)).tickFormat("")).call(g => g.select(".domain").remove());
+  svg.append("g").attr("class", "eixo").attr("transform", `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickFormat(d => fmtInt.format(d))).call(g => g.select(".domain").remove());
+  svg.append("g").attr("class", "eixo").attr("transform", `translate(0,${H - mb})`).call(d3.axisBottom(x).tickValues(ses.filter(s => s % (W < 500 ? 8 : 4) === 1).map(String)).tickFormat(s => `SE ${s}`));
+  if (ref) {   // faixa de 2023–2025
+    const area = d3.area().x((d, i) => x(String(i + 1)) + x.bandwidth() / 2).y0((d, i) => y(ref.min[i])).y1((d, i) => y(ref.max[i]));
+    svg.append("path").datum(ses).attr("d", area).attr("fill", css("--c4")).attr("opacity", .22);
+  }
+  const incompleta = s => s > S.se_consolidada;
+  if (obitos) {
+    svg.append("g").selectAll("rect").data(ses).join("rect").attr("x", s => x(String(s))).attr("width", x.bandwidth())
+      .attr("y", s => y(T.obitos[s - 1])).attr("height", s => y(0) - y(T.obitos[s - 1])).attr("fill", css("--c3")).attr("opacity", s => incompleta(s) ? .4 : .9);
+  } else {
+    const pilha = d3.stack().keys(grupos).value((s, g) => T.casos[g][s - 1] || 0)(ses);
+    svg.append("g").selectAll("g").data(pilha).join("g").attr("fill", d => css(GRUPOS_COR[d.key]))
+      .selectAll("rect").data(d => d).join("rect").attr("x", d => x(String(d.data))).attr("width", x.bandwidth())
+      .attr("y", d => y(d[1])).attr("height", d => y(d[0]) - y(d[1])).attr("opacity", d => incompleta(d.data) ? .45 : 1);
+    svg.append("path").datum(ant).attr("fill", "none").attr("stroke", css("--ink-2")).attr("stroke-width", 1.6).attr("stroke-dasharray", "5 4")
+      .attr("d", d3.line().x((d, i) => x(String(i + 1)) + x.bandwidth() / 2).y(d => y(d)));
+  }
+  const xc = x(String(S.se_consolidada + 1));
+  if (xc != null) { svg.append("line").attr("x1", xc - 2).attr("x2", xc - 2).attr("y1", mt).attr("y2", H - mb).attr("stroke", css("--muted")).attr("stroke-dasharray", "2 3");
+    svg.append("text").attr("x", xc + 2).attr("y", mt + 10).text("incompletas →").attr("font-size", 11); }
+  svg.append("rect").attr("x", ml).attr("y", mt).attr("width", W - ml - mr).attr("height", H - mt - mb).attr("fill", "transparent")
+    .on("mousemove", ev => { const [px] = d3.pointer(ev); const s = Math.max(1, Math.min(n, Math.floor((px - ml) / x.step()) + 1));
+      let h = `<b>Semana ${s} (${dataBR(S.inicio_semanas[s - 1], false)})</b>${incompleta(s) ? `<div class="nota">incompleta: o número vai subir</div>` : ""}`;
+      if (obitos) h += linhaTip(css("--c3"), "Óbitos", fI(T.obitos[s - 1]));
+      else { grupos.slice().reverse().forEach(g => { const v = T.casos[g][s - 1]; if (v) h += linhaTip(css(GRUPOS_COR[g]), esc(S.grupos[g]), fI(v)); });
+        h += linhaTip(null, "<b>Total</b>", fI(tot[s - 1])) + linhaTip(css("--ink-2"), `${S.ano - 1}`, fI(ant[s - 1]), "l") + (ref ? linhaTip(null, `${S.ref_anos.join("–").replace(/–\d+–/, "–")} (mín.–máx.)`, `${fI(ref.min[s - 1])}–${fI(ref.max[s - 1])}`) : ""); }
+      mostrarTip(ev, h); })
+    .on("mouseleave", esconderTip);
+  $("#leg-g-srag").innerHTML = obitos ? `<span class="chip"><i style="background:var(--c3)"></i>Óbitos por SRAG</span>` :
+    grupos.map(g => `<span class="chip"><i style="background:var(${GRUPOS_COR[g]})"></i>${esc(S.grupos[g])}</span>`).join("") + `<span class="chip"><i class="tracejada"></i>${S.ano - 1}</span><span class="chip"><i class="faixa" style="background:var(--c4)"></i>Faixa de ${S.ref_anos[0]} a ${S.ref_anos[S.ref_anos.length - 1]}</span>`;
+  $("#nota-g-srag").textContent = obitos ? "Óbitos por SRAG pela semana de início dos sintomas. As últimas semanas (mais claras) estão incompletas." : "Barras coloridas: casos por vírus identificado; cinza: sem vírus identificado ou em investigação. As últimas semanas (mais claras) estão incompletas.";
+}
+function barrasH(alvo, dados, rot) {   // dados: [[rótulo, valor, cor]]
+  const box = $(alvo); box.innerHTML = "";
+  const tot = d3.sum(dados, d => d[1]);
+  if (!tot) return semDados(alvo, "Sem casos neste período.");
+  const W = larguraGrafico(box, 540), lh = 26, ml = 150, mr = 90, H = dados.length * lh + 6;
+  const x = d3.scaleLinear([0, d3.max(dados, d => d[1])], [ml, W - mr]);
+  const svg = d3.select(box).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", rot);
+  const g = svg.selectAll("g").data(dados).join("g").attr("transform", (d, i) => `translate(0,${i * lh + 3})`);
+  g.append("text").attr("x", ml - 8).attr("y", lh / 2).attr("dy", ".35em").attr("text-anchor", "end").text(d => d[0]);
+  g.append("rect").attr("x", ml).attr("height", lh - 8).attr("y", 2).attr("width", d => x(d[1]) - ml).attr("rx", 3).attr("fill", d => d[2]);
+  g.append("text").attr("x", d => x(d[1]) + 6).attr("y", lh / 2).attr("dy", ".35em").attr("class", "rot-forte").text(d => `${fmtInt.format(d[1])} (${fmtN(100 * d[1] / tot, 0)}%)`);
+}
+function barrasAgentes(S, R) {
+  const v = R.agentes_8s;
+  const dados = [["Covid-19", v.covid, css("--covid")], ["Influenza A", v.flu_a, css("--flu-a")], ["Influenza B", v.flu_b, css("--flu-b")], ["Influenza (tipo n/i)", v.flu_nd, css("--flu-nd")], ["VSR", v.vsr, css("--vsr")], ["Outros vírus", v.outros_virus, css("--outros")]].sort((a, b) => b[1] - a[1]);
+  barrasH("#g-agentes", dados, "Vírus identificados");
+}
+function barrasFaixas(S, R) {
+  const nomes = { "0-4": "0 a 4 anos", "5-14": "5 a 14 anos", "15-59": "15 a 59 anos", "60+": "60 anos ou mais" };
+  barrasH("#g-faixas", S.faixas.map(f => [nomes[f] || f, R.faixas_8s[f] || 0, css("--accent")]), "Faixas etárias");
+}
+function mapaSRAG(S) {
+  const cor = { alta: css("--n4"), estavel: css("--n2"), queda: css("--n1") };
+  desenhaMapa("#mapa-srag", G.uf, { W: 520, H: 500, getObj: id => S.territorios[id] ? S.territorios[id].resumo : null, cor: o => cor[o.tendencia] || css("--line"), destaque: estadoSrag.uf,
+    tip: (id, o) => `<b>${UFS[id]}</b>` + (o ? linhaTip(cor[o.tendencia], "Tendência", TEND[o.tendencia] || "—") + linhaTip(null, "Variação", sinal(o.var_pct, 0, "%")) + linhaTip(null, "Casos, 4 semanas", fI(o.casos_4s)) + linhaTip(null, "Por 100 mil hab.", fmtN(o.inc_4s, 1)) : ""),
+    onClick: id => { estadoSrag.uf = id; $("#sel-srag-uf").value = id; srag(); } });
+  $("#leg-mapa-srag").innerHTML = `<span class="chip"><i style="background:var(--n4)"></i>Em alta</span><span class="chip"><i style="background:var(--n2)"></i>Estável</span><span class="chip"><i style="background:var(--n1)"></i>Em queda</span><span class="chip"><i style="background:var(--line)"></i>Poucos casos</span>`;
+}
+function tabelaSRAG(S) {
+  const linhas = UF_ORDEM.map(uf => [uf, S.territorios[uf].resumo]).sort((a, b) => (b[1].inc_4s || 0) - (a[1].inc_4s || 0));
+  $("#tab-srag").innerHTML = `<thead><tr><th>Estado</th><th>Casos 4 sem.</th><th>Por 100 mil</th><th>Tendência</th><th>Casos no ano</th><th>Óbitos no ano</th></tr></thead><tbody>` +
+    linhas.map(([uf, r]) => `<tr data-uf-srag="${uf}"${estadoSrag.uf === uf ? ' class="destaque"' : ""}><td>${UFS[uf]}</td><td>${fI(r.casos_4s)}</td><td>${fmtN(r.inc_4s, 1)}</td><td>${tendTxt(r.tendencia)}</td><td>${fI(r.casos_ano)}</td><td>${fI(r.obitos_ano)}</td></tr>`).join("") + "</tbody>";
+}
+
+/* ================================================================ ABA CLIMA E SAÚDE */
+function climaSaude() {
+  const C = D.clima;
+  if (!C) { ["#mapa-temp", "#mapa-dengue-clima", "#g-disp"].forEach(s => semDados(s)); return; }
+  const ci = Object.fromEntries(C.cols.map((c, i) => [c, i])), R = C.regioes, E = C.enso;
+  $("#lede-clima").innerHTML = `${E && E.fase === "el_nino" ? `O Pacífico está em <b>El Niño ${esc(E.forca || "")}</b> (índice ONI de ${sinal(E.oni, 2, " °C")}), segundo a NOAA. ` : ""}O El Niño muda a chuva e a temperatura no Brasil, e o clima influencia doenças como a dengue, a leptospirose e as doenças respiratórias. Os mapas comparam o calor dos últimos 30 dias com a dengue das últimas 4 semanas em cada região imediata do IBGE. Os dados de clima vêm do <a href="https://ladriasces.github.io/Monitor-El-Nino/" target="_blank" rel="noopener noreferrer">Monitor El Niño</a> (observado até ${dataBR(C.clima_fim)}).`;
+  const escT = divergente(3, css("--frio"), css("--quente"));
+  desenhaMapa("#mapa-temp", G.imed, { W: 560, H: 520, getObj: id => R[id] && R[id][ci.t30_anom] != null ? R[id] : null, cor: o => escT(o[ci.t30_anom]), contorno: UF_CONTORNO, destaque: LUGAR && LUGAR.imed,
+    tip: (id, o) => `<b>${esc((IMED.get(id) || {}).nome || id)}</b>` + (o ? linhaTip(null, "Temperatura, 30 dias", sinal(o[ci.t30_anom], 1, " °C")) + linhaTip(null, "Chuva, 30 dias", sinal(o[ci.p30_anom], 0, "%")) + linhaTip(null, "Dengue (por 100 mil, 4 sem.)", fmtN(o[ci.dengue_inc4], 1)) : "") });
+  const legT = d3.range(-3, 3.01, .5);
+  legendaRampa("#leg-temp", escT, legT, ["−3 °C", "0", "+3 °C"], "Diferença da temperatura média (°C)");
+  const maxD = d3.max(Object.values(R), v => v[ci.dengue_inc4] || 0) || 10;
+  const escD = sequencialLog(maxD, css("--inc"));
+  desenhaMapa("#mapa-dengue-clima", G.imed, { W: 560, H: 520, getObj: id => R[id] && R[id][ci.n_mun] ? R[id] : null, cor: o => escD(o[ci.dengue_inc4]), contorno: UF_CONTORNO, destaque: LUGAR && LUGAR.imed,
+    tip: (id, o) => `<b>${esc((IMED.get(id) || {}).nome || id)}</b>` + (o ? linhaTip(null, "Dengue (por 100 mil, 4 sem.)", fmtN(o[ci.dengue_inc4], 1)) + linhaTip(null, "Municípios com clima favorável ao mosquito", o[ci.pct_receptivo] == null ? "—" : fmtN(o[ci.pct_receptivo], 0) + "%") : "sem dados") });
+  legendaRampa("#leg-dengue-clima", escD, [0.5, 1, 3, 10, 30, 100, maxD], ["0", "10", "100", fI(maxD)], "Casos estimados por 100 mil habitantes");
+  dispersao(R, ci);
+}
+const COR_REGIAO = { Norte: "--vsr", Nordeste: "--flu-a", "Centro-Oeste": "--outros", Sudeste: "--covid", Sul: "--frio" };
+function dispersao(R, ci) {
+  const box = $("#g-disp"); box.innerHTML = "";
+  const pts = Object.entries(R).filter(([id, v]) => v[ci.t30_anom] != null && v[ci.dengue_inc4] != null && v[ci.n_mun]).map(([id, v]) => ({ id, t: v[ci.t30_anom], d: v[ci.dengue_inc4], reg: REGIAO_UF[(IMED.get(id) || {}).uf] }));
+  if (pts.length < 10) return semDados("#g-disp", "Ainda não há dados de dengue suficientes para este gráfico.");
+  const W = larguraGrafico(box, 1160), H = 340, mt = 10, mb = 40, ml = 56, mr = 10;
+  const x = d3.scaleLinear(d3.extent(pts, p => p.t), [ml, W - mr]).nice();
+  const y = d3.scaleSymlog([0, d3.max(pts, p => p.d)], [H - mb, mt]).constant(5).nice();
+  const svg = d3.select(box).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", "Temperatura e dengue por região");
+  svg.append("g").attr("class", "grid").attr("transform", `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(W - ml - mr)).tickFormat("")).call(g => g.select(".domain").remove());
+  svg.append("g").attr("class", "eixo").attr("transform", `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5, "~s"));
+  svg.append("g").attr("class", "eixo").attr("transform", `translate(0,${H - mb})`).call(d3.axisBottom(x).ticks(8).tickFormat(d => sinal(d, 1, " °C")));
+  svg.append("text").attr("x", W - mr).attr("y", H - 6).attr("text-anchor", "end").text("diferença da temperatura média nos últimos 30 dias →");
+  svg.append("text").attr("x", ml - 46).attr("y", mt - 2).text("dengue por 100 mil hab. (4 semanas)").attr("font-size", 11);
+  svg.append("g").selectAll("circle").data(pts).join("circle").attr("cx", p => x(p.t)).attr("cy", p => y(p.d)).attr("r", p => LUGAR && LUGAR.imed === p.id ? 7 : 4)
+    .attr("fill", p => css(COR_REGIAO[p.reg] || "--c4")).attr("fill-opacity", .75).attr("stroke", p => LUGAR && LUGAR.imed === p.id ? css("--ink") : "none").attr("stroke-width", 2)
+    .on("mousemove", (ev, p) => mostrarTip(ev, `<b>${esc(IMED.get(p.id).nome)} (${IMED.get(p.id).uf})</b>` + linhaTip(null, "Temperatura", sinal(p.t, 1, " °C")) + linhaTip(null, "Dengue (por 100 mil)", fmtN(p.d, 1))))
+    .on("mouseleave", esconderTip);
+  $("#leg-disp").innerHTML = Object.entries(COR_REGIAO).map(([r, c]) => `<span class="chip"><i style="background:var(${c})"></i>${r}</span>`).join("");
+}
+
+/* ================================================================ ABA NOTÍCIAS */
+const estadoNot = { uf: LUGAR ? LUGAR.uf : "", tema: "", busca: "", n: 40 };
+function noticias() {
+  if (!D.noticias) return semDados("#lista-noticias");
+  const b = estadoNot.busca.trim().toLowerCase();
+  const lista = D.noticias.noticias.filter(n => (!estadoNot.uf || doLugar(n, estadoNot.uf)) && (!estadoNot.tema || n.temas.includes(estadoNot.tema)) && (!b || n.titulo.toLowerCase().includes(b) || (n.fonte || "").toLowerCase().includes(b)));
+  $("#conta-not").textContent = `${fmtInt.format(lista.length)} ${lista.length === 1 ? "notícia" : "notícias"}${estadoNot.uf ? ` sobre ${UFS[estadoNot.uf]}` : ""}`;
+  $("#lista-noticias").innerHTML = lista.slice(0, estadoNot.n).map(itemNoticia).join("") || `<p class="muted">Nenhuma notícia com esses filtros nos últimos 14 dias.</p>`;
+  $("#mais-not").hidden = lista.length <= estadoNot.n;
+}
+
+/* ---------- controles e abas ---------- */
+function marcarSeg(sel, v) { document.querySelectorAll(sel + " button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === v ? "true" : "false")); }
+function seg(sel, fn) { document.querySelectorAll(sel + " button").forEach(b => b.addEventListener("click", () => { marcarSeg(sel, b.dataset.v); fn(b.dataset.v); })); }
+seg("#ctl-arbo-doenca", v => { estadoArbo.doenca = v; arbo(); });
+seg("#ctl-arbo-ind", v => { estadoArbo.ind = v; mapaArbo(); });
+seg("#ctl-srag-med", v => { estadoSrag.med = v; srag(); });
+seg("#ctl-not-tema", v => { estadoNot.tema = v; estadoNot.n = 40; noticias(); });
+UF_ORDEM.forEach(uf => { ["#sel-not-uf", "#sel-arbo-uf", "#sel-srag-uf"].forEach(s => $(s).append(el("option", { value: uf, textContent: UFS[uf] }))); });
+$("#sel-not-uf").value = estadoNot.uf; $("#sel-arbo-uf").value = estadoArbo.uf; $("#sel-srag-uf").value = estadoSrag.uf;
+$("#sel-not-uf").addEventListener("change", e => { estadoNot.uf = e.target.value; estadoNot.n = 40; noticias(); });
+$("#sel-arbo-uf").addEventListener("change", e => { estadoArbo.uf = e.target.value; arbo(); });
+$("#sel-srag-uf").addEventListener("change", e => { estadoSrag.uf = e.target.value; srag(); });
+$("#busca-not").addEventListener("input", e => { estadoNot.busca = e.target.value; estadoNot.n = 40; noticias(); });
+$("#mais-not").addEventListener("click", () => { estadoNot.n += 40; noticias(); });
+document.addEventListener("click", ev => {
+  const b = ev.target.closest("[data-ir]"); if (b) { abrir(b.dataset.ir); window.scrollTo({ top: 0 }); }
+  // Sem onclick no HTML: a política de segurança (CSP) do site bloqueia scripts embutidos em atributos
+  if (ev.target.closest('[data-acao="lugar"]')) abrirPainelLugar(true);
+  const gps = ev.target.closest('[data-acao="gps"]'); if (gps) usarLocalizacao(gps);
+  const ta = ev.target.closest("tr[data-uf]"); if (ta) { estadoArbo.uf = ta.dataset.uf; $("#sel-arbo-uf").value = ta.dataset.uf; arbo(); window.scrollTo({ top: $("#aba-arbo").offsetTop - 60, behavior: "smooth" }); }
+  const ts = ev.target.closest("tr[data-uf-srag]"); if (ts) { estadoSrag.uf = ts.dataset.ufSrag; $("#sel-srag-uf").value = ts.dataset.ufSrag; srag(); window.scrollTo({ top: $("#aba-srag").offsetTop - 60, behavior: "smooth" }); }
+});
+
+const RENDER = { agora, arbo, srag, clima: climaSaude, outras: () => {}, noticias, sobre: () => {} };
+const feitos = new Set();
+let abaAtual = "agora", ultimaAba = "agora";
+function abrir(aba, render = true) {
+  if (!RENDER[aba]) aba = "agora";
+  abaAtual = aba;
+  if (aba !== "sobre") ultimaAba = aba;
+  document.body.classList.toggle("modo-sobre", aba === "sobre");
+  $("#btn-sobre").setAttribute("aria-pressed", aba === "sobre" ? "true" : "false");
+  document.querySelectorAll("nav.abas button").forEach(b => b.setAttribute("aria-selected", b.dataset.aba === aba ? "true" : "false"));
+  document.querySelectorAll("section.aba").forEach(s => s.hidden = s.id !== "aba-" + aba);
+  if (CELULAR.matches) {
+    const b = document.querySelector(`nav.abas button[data-aba="${aba}"]`), lista = b && b.parentElement;
+    if (lista) lista.scrollTo({ left: b.offsetLeft - (lista.clientWidth - b.offsetWidth) / 2, behavior: "smooth" });
+  }
+  if (render && CARREGADO && !feitos.has(aba)) { RENDER[aba](); feitos.add(aba); }
+  try { history.replaceState(null, "", "#" + aba); } catch (e) {}
+}
+function contarAba(nome) { try { window.goatcounter && window.goatcounter.count && window.goatcounter.count({ path: "aba-" + nome, title: nome, event: true }); } catch (e) {} }
+document.querySelectorAll("nav.abas button").forEach(b => b.addEventListener("click", () => { abrir(b.dataset.aba); contarAba(b.dataset.aba); }));
+addEventListener("hashchange", () => { const h = location.hash.slice(1); if (RENDER[h] && h !== abaAtual) abrir(h); });
+$("#btn-sobre").addEventListener("click", () => {
+  if (abaAtual === "sobre") return abrir(ultimaAba);
+  abrir("sobre"); contarAba("sobre"); window.scrollTo({ top: 0 });
+});
+$("#btn-voltar").addEventListener("click", () => { abrir(ultimaAba); window.scrollTo({ top: 0 }); });
+
+function rerender() { feitos.clear(); if (CARREGADO) hero(); abrir(abaAtual); }
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", rerender);
+CELULAR.addEventListener("change", rerender);
+let larguraAnterior = innerWidth, esperaGiro = null;
+addEventListener("resize", () => { clearTimeout(esperaGiro); esperaGiro = setTimeout(() => { if (CELULAR.matches && Math.abs(innerWidth - larguraAnterior) > 40) { larguraAnterior = innerWidth; rerender(); } }, 250); });
+new MutationObserver(rerender).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+/* ---------- carga dos dados ---------- */
+const VERSAO = Math.floor(Date.now() / 36e5);   // renova o cache do navegador a cada hora
+const VERSAO_GEO = "__VERSAO_GEO__";              // muda só quando a malha muda
+let CARREGADO = false;
+async function carregar() {
+  const nomes = ["arbo", "srag", "clima", "noticias", "atualizacao"];
+  await Promise.all(nomes.map(n => fetch(`dados/${n}.json?v=${VERSAO}`).then(r => r.ok ? r.json() : null).catch(() => null).then(j => { D[n] = j; })));
+  CARREGADO = true;
+  hero();
+  abrir(abaAtual);
+}
+initLugar();
+abaAtual = RENDER[location.hash.slice(1)] ? location.hash.slice(1) : "agora";
+abrir(abaAtual, false);
+carregar();
+</script>
