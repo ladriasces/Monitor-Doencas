@@ -254,7 +254,9 @@ def bloco_arbo() -> dict:
                              for c in ARBO_COLS] for t in ult.itertuples()},
             "territorios": terr,
         }
-    zk = _bloco_zika(serie[serie.doenca == "zika"], mun, ses, zika_ses, zika_se_fim, zika_info, anterior.get("zika"))
+    # zika: os totais do ano saem do arquivo completo do SINAN, não do eixo de semanas do site (que pode ser curto)
+    zika_completa = novo[novo.doenca == "zika"] if zika is not None else None
+    zk = _bloco_zika(zika_completa, mun, ses, zika_se_fim, zika_info, anterior.get("zika"))
     if zk:
         saida["zika"] = zk
     return saida
@@ -264,16 +266,16 @@ ZIKA_COLS = ["casos_ano", "inc_ano", "casos_4s"]
 ZIKA_INCOMPLETAS = 4   # últimas semanas do arquivo preliminar: ainda recebem notificações
 
 
-def _bloco_zika(sd: pd.DataFrame, mun: pd.DataFrame, ses: list, zika_ses: list, se_fim, info: dict | None,
+def _bloco_zika(sd: pd.DataFrame | None, mun: pd.DataFrame, ses: list, se_fim, info: dict | None,
                 anterior: dict | None) -> dict | None:
     """Zika (SINAN): casos prováveis no ano por município e estado, incidência no ano e últimas 4 semanas
-    (preliminares). Sem coleta nova, recalcula a partir das séries publicadas e mantém a versão anterior."""
-    if not se_fim or (sd.empty and not info):
+    (preliminares), a partir do arquivo completo da coleta. Sem coleta nova, mantém o que está publicado."""
+    if sd is None or info is None or not se_fim:
         return anterior
     se_fim = int(se_fim)
     ano = se_fim // 100
     sd = sd[sd.se <= se_fim]
-    ult4 = zika_ses[-4:]
+    ult4 = [codigo_se(*semana_epi(inicio_semana(ano, se_fim % 100) - timedelta(weeks=k))) for k in range(4)]
     pop = mun.set_index("ibge")["pop"]
     pop_uf = mun.groupby("uf")["pop"].sum()
     no_ano = sd[sd.se // 100 == ano]
