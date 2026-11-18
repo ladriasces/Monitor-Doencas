@@ -31,6 +31,9 @@ SRI_GOATCOUNTER = "sha384-nRw6qfbWyJha9LhsOtSb2YJDyZdKvvCFh0fJYlkquSFjUxp9FVNugb
 GOATCOUNTER = "ladri"   # contador anônimo do LADRI (o endereço do site separa os painéis)
 REPO = "https://github.com/ladriasces/Monitor-Doencas"
 SITE = "https://ladriasces.github.io/Monitor-Doencas/"
+# Até o lançamento (depois da revisão da área da saúde), o site pede aos buscadores que não o indexem.
+# No lançamento: LANCADO = True, regerar e enviar.
+LANCADO = False
 DESCRICAO = ("Acompanhe a dengue, a chikungunya, a zika e as doenças respiratórias graves no seu município e no Brasil, "
              "com dados oficiais do Ministério da Saúde e da Fiocruz e a ligação com o clima. LADRI · ASCES-UNITA.")
 
@@ -116,6 +119,7 @@ def main() -> None:
     scripts = re.findall(r"<script>(.*?)</script>", resto, flags=re.S)
     if len(scripts) != 1:
         raise RuntimeError(f"esperava 1 script embutido no template, achei {len(scripts)}")
+    robos = "" if LANCADO else '\n<meta name="robots" content="noindex, nofollow">'   # prévia: fora dos buscadores
     pagina = f"""<!doctype html>
 <html lang="pt-BR">
 <head>
@@ -123,7 +127,7 @@ def main() -> None:
 <meta http-equiv="Content-Security-Policy" content="{politica_seguranca(scripts[0])}">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="{DESCRICAO}">
+<meta name="description" content="{DESCRICAO}">{robos}
 <link rel="canonical" href="{SITE}">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="pt_BR">

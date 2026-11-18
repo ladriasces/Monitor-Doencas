@@ -134,6 +134,8 @@ def validar_site() -> None:
         h = base64.b64encode(hashlib.sha256(scripts[0].encode("utf-8")).digest()).decode("ascii")
         erro(h == m.group(1), "o hash da CSP não corresponde ao script do painel")
     erro('integrity="sha512-' in texto, "D3 sem verificação de integridade (SRI)")
+    aviso('name="robots" content="noindex' not in texto,
+          "site em prévia: buscadores não indexam (no lançamento, LANCADO = True no 03_painel.py)")
     erro(" onclick=" not in texto and " onerror=" not in texto, "atributo de evento embutido no HTML (bloqueado pela CSP)")
     erro((RAIZ / "docs" / "geo" / "municipios.json").exists(), "malha dos municípios ausente (rode 03_painel.py)")
 

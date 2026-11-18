@@ -2,7 +2,7 @@
 
 **LADRI — Laboratório de Dados e Relações Internacionais · ASCES-UNITA**
 
-🔗 **https://ladriasces.github.io/Monitor-Doencas/** *(endereço previsto; o site ainda não foi publicado)*
+*Em preparação: o endereço do site será divulgado no lançamento, depois da revisão por profissionais da área da saúde.*
 
 ## O que é
 
