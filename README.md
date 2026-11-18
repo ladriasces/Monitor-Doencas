@@ -17,7 +17,7 @@ Abra o site e escolha o seu município em **"Escolha seu município"**. O seu lu
 | Aba | O que mostra |
 |---|---|
 | **Agora** | Resumo da semana, o seu município (nível de alerta, casos, série recente), o mapa da dengue e as notícias |
-| **Dengue, chikungunya e zika** | Mapa dos 5.570 municípios por nível de alerta ou incidência, série semanal com a estimativa de casos, tabela por estado |
+| **Dengue, chikungunya e zika** | Mapa dos 5.570 municípios por nível de alerta ou incidência, série semanal com a estimativa de casos, tabela por estado (zika: casos prováveis do SINAN, sem nível de alerta) |
 | **Doenças respiratórias** | SRAG por semana e por vírus, comparação com 2025 e com 2023–2025, idade dos pacientes, tendência por estado |
 | **Clima e saúde** | Calor dos últimos 30 dias (Monitor El Niño) e dengue das últimas 4 semanas em cada região imediata |
 | **Outras doenças** | (em preparação) séries de leptospirose, malária, tuberculose, hanseníase, sífilis e vacinação, para análise |
@@ -27,7 +27,8 @@ Em **Dados e método** estão as fontes, as definições e os limites de cada n�
 
 ## Fontes
 
-- **Arboviroses:** InfoDengue (Fiocruz e FGV), pela API do [Mosqlimate](https://mosqlimate.org/) — precisa de uma chave gratuita (`MOSQLIMATE_KEY`).
+- **Dengue e chikungunya:** InfoDengue (Fiocruz e FGV), pela API do [Mosqlimate](https://mosqlimate.org/) — precisa de uma chave gratuita (`MOSQLIMATE_KEY`).
+- **Zika:** SINAN (Ministério da Saúde), arquivos `.dbc` do FTP do DATASUS, lidos pelo `dbc.py` (Python puro) e apagados depois da contagem. O InfoDengue deixou de publicar zika na SE 7 de 2024.
 - **SRAG:** SIVEP-Gripe, Ministério da Saúde, [Portal de Dados Abertos do SUS](https://dadosabertos.saude.gov.br/dataset/srag-2019-a-2026) (arquivos anuais atualizados toda semana).
 - **Clima:** Monitor El Niño (LADRI), já publicado.
 - **População e mapas:** IBGE.

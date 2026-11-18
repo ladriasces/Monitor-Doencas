@@ -225,6 +225,84 @@ def agregar_srag(arquivo: Path, ano: int):
     return ag, total - len(df)
 
 
+# ---------------------------------------------------------------- SINAN (DATASUS)
+# Arquivos .dbc de notificações individuais, um por agravo e ano: o ano corrente fica em PRELIM (preliminar,
+# atualizado pelo Ministério da Saúde ao longo do ano) e os anos encerrados em FINAIS.
+SINAN_FTP = "ftp://ftp.datasus.gov.br/dissemin/publicos/SINAN/DADOS"
+SINAN_DESCARTADO = "2"   # CLASSI_FIN da ficha de zika: 1 confirmado, 2 descartado, 8 inconclusivo, vazio em investigação
+
+
+def listar_ftp(url: str, tentativas: int = 4) -> dict[str, dict]:
+    """Listagem de uma pasta do FTP do DATASUS: {arquivo: {"data": date, "bytes": int}}."""
+    import urllib.request
+    for i in range(tentativas):
+        try:
+            with urllib.request.urlopen(url.rstrip("/") + "/", timeout=90) as resp:
+                texto = resp.read().decode("latin-1")
+            break
+        except OSError:
+            if i == tentativas - 1:
+                raise
+            time.sleep(10 * (i + 1))
+    saida = {}
+    for linha in texto.splitlines():   # formato IIS: "11-10-26  09:42AM   395401 ZIKABR26.dbc"
+        m = re.match(r"(\d\d)-(\d\d)-(\d\d)\s+\S+\s+(\d+)\s+(\S+)$", linha.strip())
+        if m:
+            saida[m.group(5)] = {"data": date(2000 + int(m.group(3)), int(m.group(1)), int(m.group(2))),
+                                 "bytes": int(m.group(4))}
+    return saida
+
+
+def baixar_ftp(url: str, destino: Path, tentativas: int = 4) -> Path:
+    import shutil
+    import urllib.request
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    for i in range(tentativas):
+        try:
+            with urllib.request.urlopen(url, timeout=300) as resp, open(destino, "wb") as f:
+                shutil.copyfileobj(resp, f)
+            return destino
+        except OSError:
+            destino.unlink(missing_ok=True)
+            if i == tentativas - 1:
+                raise
+            time.sleep(10 * (i + 1))
+    return destino
+
+
+def arquivos_sinan(agravo: str, anos: list[int]) -> dict[int, dict]:
+    """Onde está o arquivo de cada ano ({ano: {"url", "data", "bytes", "situacao"}}); FINAIS tem prioridade."""
+    pastas = {"FINAIS": listar_ftp(f"{SINAN_FTP}/FINAIS"), "PRELIM": listar_ftp(f"{SINAN_FTP}/PRELIM")}
+    saida = {}
+    for ano in anos:
+        nome = f"{agravo}BR{ano % 100:02d}.dbc"
+        for pasta in ("FINAIS", "PRELIM"):
+            if nome in pastas[pasta]:
+                saida[ano] = {"url": f"{SINAN_FTP}/{pasta}/{nome}", "situacao": pasta.lower(), **pastas[pasta][nome]}
+                break
+    return saida
+
+
+def agregar_sinan(arquivo: Path) -> tuple[dict[tuple[str, int], int], dict]:
+    """Casos prováveis (todas as notificações menos as descartadas) por município de residência (código IBGE
+    de 6 dígitos) e semana epidemiológica de início dos sintomas. Nenhum campo individual sai desta função."""
+    from dbc import ler_dbc
+    contagem: dict[tuple[str, int], int] = {}
+    info = {"notificacoes": 0, "descartadas": 0, "sem_municipio_ou_semana": 0}
+    for reg in ler_dbc(arquivo, ["ID_MN_RESI", "SEM_PRI", "CLASSI_FIN"]):
+        info["notificacoes"] += 1
+        if reg["CLASSI_FIN"] == SINAN_DESCARTADO:
+            info["descartadas"] += 1
+            continue
+        mun, sem = reg["ID_MN_RESI"], reg["SEM_PRI"]
+        if not (len(mun) == 6 and mun.isdigit() and len(sem) == 6 and sem.isdigit() and 1 <= int(sem) % 100 <= 53):
+            info["sem_municipio_ou_semana"] += 1
+            continue
+        k = (mun, int(sem))
+        contagem[k] = contagem.get(k, 0) + 1
+    return contagem, info
+
+
 # ---------------------------------------------------------------- texto e números
 def chave(nome: str) -> str:
     """Normaliza um nome para comparação: sem acentos, minúsculas, sem hífens nem espaços extras."""

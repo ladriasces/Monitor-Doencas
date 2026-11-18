@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-xVxVRh8hM0aGmHdU8WHO8SOJ2qFzFg/AcnOPEZ3eKQk=' https://gc.zgo.at; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://ladri.goatcounter.com; connect-src 'self' https://ladri.goatcounter.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-ULcZ+i0B/Gq7V0D3QeqIJXt2+v9szy2dffUw842ZwiM=' https://gc.zgo.at; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://ladri.goatcounter.com; connect-src 'self' https://ladri.goatcounter.com; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Acompanhe a dengue, a chikungunya, a zika e as doenças respiratórias graves no seu município e no Brasil, com dados oficiais do Ministério da Saúde e da Fiocruz e a ligação com o clima. LADRI · ASCES-UNITA.">
@@ -381,11 +381,11 @@ footer a { color: var(--ink); text-underline-offset: 2px; }
   <section class="aba" id="aba-arbo" hidden>
     <div class="cab">
       <h2>Dengue, chikungunya e zika</h2>
-      <p class="lede">As três doenças são transmitidas pelo mosquito <i>Aedes aegypti</i>. Os indicadores de cada município vêm do InfoDengue (Fiocruz e FGV), que trabalha com o Ministério da Saúde: casos notificados, a estimativa de casos que ainda vão ser registrados, a incidência e o nível de alerta.</p>
+      <p class="lede">As três doenças são transmitidas pelo mosquito <i>Aedes aegypti</i>. Os indicadores de dengue e chikungunya vêm do InfoDengue (Fiocruz e FGV), que trabalha com o Ministério da Saúde: casos notificados, a estimativa de casos que ainda vão ser registrados, a incidência e o nível de alerta. Os de zika vêm direto do SINAN, o sistema de notificação do Ministério da Saúde: casos prováveis, sem estimativa e sem nível de alerta.</p>
     </div>
     <div class="controles">
       <span><span class="ctl-label">Doença</span><span class="seg" id="ctl-arbo-doenca"><button type="button" data-v="dengue" aria-pressed="true">Dengue</button><button type="button" data-v="chikungunya" aria-pressed="false">Chikungunya</button><button type="button" data-v="zika" aria-pressed="false">Zika</button></span></span>
-      <span><span class="ctl-label">Mapa</span><span class="seg" id="ctl-arbo-ind"><button type="button" data-v="nivel" aria-pressed="true">Nível de alerta</button><button type="button" data-v="inc" aria-pressed="false">Incidência</button></span></span>
+      <span id="ctl-arbo-ind-caixa"><span class="ctl-label">Mapa</span><span class="seg" id="ctl-arbo-ind"><button type="button" data-v="nivel" aria-pressed="true">Nível de alerta</button><button type="button" data-v="inc" aria-pressed="false">Incidência</button></span></span>
       <span><span class="ctl-label">Território</span><select id="sel-arbo-uf" aria-label="Território"><option value="">Brasil</option></select></span>
     </div>
     <div class="kpis" id="kpis-arbo"></div>
@@ -399,7 +399,7 @@ footer a { color: var(--ink); text-underline-offset: 2px; }
       <div class="cartao c12">
         <div class="cartao-cab"><h3 id="tit-serie-arbo">Casos por semana</h3><span class="chips" id="leg-serie-arbo"></span></div>
         <div class="grafico" id="g-arbo"></div>
-        <p class="nota">Barras: casos já notificados em cada semana de início dos sintomas. Linha: estimativa do InfoDengue, que soma os casos que ainda serão registrados (o atraso de notificação). As semanas mais recentes são as mais incertas.</p>
+        <p class="nota" id="nota-serie-arbo"></p>
       </div>
       <div class="cartao c12">
         <div class="cartao-cab"><h3>Por estado</h3><span class="nota">Clique em um estado para ver o mapa dele</span></div>
@@ -534,7 +534,8 @@ footer a { color: var(--ink); text-underline-offset: 2px; }
       <div class="cartao c12 texto">
         <h2>De onde vêm os dados</h2>
         <ul>
-          <li><b>Dengue, chikungunya e zika:</b> <a href="https://info.dengue.mat.br/" target="_blank" rel="noopener noreferrer">InfoDengue</a> (Fiocruz e Fundação Getulio Vargas), pela plataforma <a href="https://mosqlimate.org/" target="_blank" rel="noopener noreferrer">Mosqlimate</a>. Os indicadores são calculados pelo InfoDengue a partir das notificações do SINAN (Ministério da Saúde) e de dados de clima, para cada município e semana.</li>
+          <li><b>Dengue e chikungunya:</b> <a href="https://info.dengue.mat.br/" target="_blank" rel="noopener noreferrer">InfoDengue</a> (Fiocruz e Fundação Getulio Vargas), pela plataforma <a href="https://mosqlimate.org/" target="_blank" rel="noopener noreferrer">Mosqlimate</a>. Os indicadores são calculados pelo InfoDengue a partir das notificações do SINAN (Ministério da Saúde) e de dados de clima, para cada município e semana.</li>
+          <li><b>Zika:</b> SINAN, Ministério da Saúde, pelo serviço de transferência de arquivos do DATASUS: arquivo preliminar do ano atual (atualizado pelo Ministério ao longo do ano) e arquivo final do ano anterior. O InfoDengue deixou de publicar indicadores de zika em fevereiro de 2024. A plataforma conta os casos prováveis por município de residência e semana de início dos sintomas.</li>
           <li><b>Doenças respiratórias (SRAG):</b> SIVEP-Gripe, Ministério da Saúde, no <a href="https://dadosabertos.saude.gov.br/dataset/srag-2019-a-2026" target="_blank" rel="noopener noreferrer">Portal de Dados Abertos do SUS</a> (atualização semanal). A plataforma conta os casos e óbitos por estado de residência, semana de início dos sintomas, vírus e faixa etária.</li>
           <li><b>Clima:</b> <a href="https://ladriasces.github.io/Monitor-El-Nino/" target="_blank" rel="noopener noreferrer">Monitor El Niño</a>, também do LADRI (NOAA, NASA POWER), por região imediata do IBGE.</li>
           <li><b>População:</b> IBGE, estimativas da população residente (tabela 6579 do SIDRA).</li>
@@ -546,6 +547,7 @@ footer a { color: var(--ink); text-underline-offset: 2px; }
           <li><b>Semana epidemiológica:</b> de domingo a sábado, numerada de 1 a 52 (ou 53) em cada ano, como faz o Ministério da Saúde. Os casos são contados pela semana em que os sintomas começaram.</li>
           <li><b>Dados preliminares:</b> um caso leva dias ou semanas para entrar no sistema. Por isso as últimas semanas sempre parecem ter menos casos do que terão. No gráfico de SRAG, as 4 semanas mais recentes aparecem mais claras e ficam fora do cálculo da tendência.</li>
           <li><b>Casos estimados (arboviroses):</b> o InfoDengue estima quantos casos de cada semana ainda serão notificados (técnica chamada <i>nowcasting</i>) e mostra a estimativa com um intervalo de incerteza.</li>
+          <li><b>Casos prováveis (zika):</b> todas as notificações, menos as descartadas pela investigação (ficam os confirmados, os inconclusivos e os ainda em investigação), como nos boletins do Ministério da Saúde. O SINAN não traz estimativa do atraso de notificação: as 4 semanas mais recentes ainda vão aumentar.</li>
           <li><b>Incidência:</b> casos por 100 mil habitantes. Permite comparar lugares com populações diferentes.</li>
           <li><b>Níveis de alerta do InfoDengue:</b> verde (condições climáticas desfavoráveis ao mosquito e poucos casos), amarelo (clima favorável ao mosquito), laranja (transmissão sustentada, Rt acima de 1 por três semanas) e vermelho (incidência acima do limiar epidêmico do município). Os níveis são calculados pelo InfoDengue, não pelo LADRI.</li>
           <li><b>Rt:</b> número de reprodução, quantas pessoas, em média, cada caso infecta. Acima de 1, os casos tendem a crescer.</li>
@@ -582,7 +584,7 @@ footer a { color: var(--ink); text-underline-offset: 2px; }
   </section>
 
   <footer>
-    <span>Fontes: InfoDengue (Fiocruz e FGV) e Mosqlimate; Ministério da Saúde, SIVEP-Gripe (Portal de Dados Abertos do SUS); Monitor El Niño (LADRI), com dados da NOAA e da NASA POWER; IBGE; <a href="https://www.gdeltproject.org/" target="_blank" rel="noopener noreferrer">GDELT Project</a>; Agência Brasil; Agência Fiocruz; ONU News.</span>
+    <span>Fontes: InfoDengue (Fiocruz e FGV) e Mosqlimate; Ministério da Saúde, SIVEP-Gripe (Portal de Dados Abertos do SUS) e SINAN (DATASUS); Monitor El Niño (LADRI), com dados da NOAA e da NASA POWER; IBGE; <a href="https://www.gdeltproject.org/" target="_blank" rel="noopener noreferrer">GDELT Project</a>; Agência Brasil; Agência Fiocruz; ONU News.</span>
     <span>Elaboração: LADRI — Laboratório de Dados e Relações Internacionais, ASCES-UNITA.</span>
     <span class="redes">Contato:
       <a href="https://www.instagram.com/ladri_asces/" target="_blank" rel="noopener" aria-label="Instagram do LADRI (@ladri_asces)" title="Instagram @ladri_asces"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><defs><radialGradient id="ig-2" cx="30%" cy="107%" r="150%"><stop offset="0" stop-color="#fdf497"/><stop offset=".05" stop-color="#fdf497"/><stop offset=".45" stop-color="#fd5949"/><stop offset=".6" stop-color="#d6249f"/><stop offset=".9" stop-color="#285aeb"/></radialGradient></defs><rect width="24" height="24" rx="6" fill="url(#ig-2)"/><rect x="5" y="5" width="14" height="14" rx="4" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="16.3" cy="7.7" r="1.05" fill="#fff"/></svg></a>
@@ -878,6 +880,11 @@ async function meuLugar() {
   if (!LUGAR) { box.innerHTML = caixaEscolherLugar(); montarBusca(box.querySelector("[data-busca-lugar]")); return; }
   const A = D.arbo, I = ARBO_I(), S = D.srag;
   const cartaoDoenca = d => {
+    const Z = A && A[d];
+    if (Z && Z.fonte === "sinan") {   // zika: casos prováveis no ano (SINAN), sem nível de alerta
+      const z = Z.mun[LUGAR.ibge];
+      return `<div class="meu-doenca"><b>${DOENCA_NOME[d]}</b><span class="nota">${z ? `${fI(z[0])} ${z[0] === 1 ? "caso provável" : "casos prováveis"} em ${Z.ano}` : `nenhum caso provável em ${Z.ano}`}</span><span class="nota">SINAN, até a ${seTxt(Z.se)}${z ? ` · ${fmtN(z[1], 1)} por 100 mil hab.` : ""}</span></div>`;
+    }
     const x = A && A[d] && A[d].mun[LUGAR.ibge];
     if (!x) return `<div class="meu-doenca"><b>${DOENCA_NOME[d]}</b><span class="muted">${A && A[d] ? "sem dados deste município nesta semana" : "o InfoDengue não publicou dados recentes"}</span></div>`;
     return `<div class="meu-doenca"><b>${DOENCA_NOME[d]}</b>${chipNivel(x[I.nivel])}<span class="nota">${fI(x[I.est])} casos estimados na ${seTxt(A[d].se)} (${fI(x[I.casos])} já notificados)</span><span class="nota">${fmtN(x[I.inc], 1)} por 100 mil hab. · Rt ${fmtN(x[I.rt], 2)}</span></div>`;
@@ -919,7 +926,8 @@ function noticiasAgora() {
   $("#noticias-agora").innerHTML = lista.slice(0, 6).map(itemNoticia).join("") || `<p class="muted">Nenhuma notícia.</p>`;
 }
 const FONTES = [
-  ["arbo", "Dengue, chikungunya e zika (InfoDengue)", () => D.arbo && D.arbo.dengue && `${seTxt(D.arbo.dengue.se, D.arbo.dengue.inicio)}${D.arbo.dengue.versao ? ` · modelo de ${dataBR(D.arbo.dengue.versao)}` : ""}`],
+  ["arbo", "Dengue e chikungunya (InfoDengue)", () => D.arbo && D.arbo.dengue && `${seTxt(D.arbo.dengue.se, D.arbo.dengue.inicio)}${D.arbo.dengue.versao ? ` · modelo de ${dataBR(D.arbo.dengue.versao)}` : ""}`],
+  ["arbo", "Zika (SINAN)", () => D.arbo && D.arbo.zika && D.arbo.zika.fonte === "sinan" && `arquivo de ${dataBR(D.arbo.zika.versao)} · até a ${seTxt(D.arbo.zika.se, D.arbo.zika.inicio)}`],
   ["srag", "Doenças respiratórias (SIVEP-Gripe)", () => D.srag && `extração de ${dataBR(D.srag.extracao)} · até a SE ${D.srag.se_fim}`],
   ["clima", "Clima (Monitor El Niño)", () => D.clima && `observado até ${dataBR(D.clima.clima_fim)}`],
   ["noticias", "Notícias", () => D.noticias && D.noticias.noticias[0] && `mais recente: ${relativo(D.noticias.noticias[0].data)}`],
@@ -933,7 +941,7 @@ function tabelaAtualizacao() {
 
 /* ================================================================ ABA ARBOVIROSES */
 const estadoArbo = { doenca: "dengue", ind: "nivel", uf: LUGAR ? LUGAR.uf : "", sel: LUGAR ? LUGAR.ibge : null };
-function graficoArbo(alvo, ses, c, e, titulo, altura = 240) {
+function graficoArbo(alvo, ses, c, e, titulo, altura = 240, rot = { c: "Notificados", e: "Estimados" }) {
   const box = $(alvo); box.innerHTML = "";
   if (!ses || !ses.length) return semDados(alvo, "Sem série para este lugar.");
   const W = larguraGrafico(box, 1160), H = altura, mt = 10, mb = 24, ml = 44, mr = 8;
@@ -952,14 +960,30 @@ function graficoArbo(alvo, ses, c, e, titulo, altura = 240) {
   const linha = d3.line().defined(d => d[1] != null).x(d => x(String(d[0])) + x.bandwidth() / 2).y(d => y(d[1]));
   svg.append("path").datum(ses.map((s, i) => [s, e[i]])).attr("fill", "none").attr("stroke", css("--inc")).attr("stroke-width", 2.2).attr("d", linha);
   svg.append("rect").attr("x", ml).attr("y", mt).attr("width", W - ml - mr).attr("height", H - mt - mb).attr("fill", "transparent")
-    .on("mousemove", ev => { const [px] = d3.pointer(ev); const i = Math.max(0, Math.min(n - 1, Math.floor((px - ml) / x.step()))); mostrarTip(ev, `<b>${titulo}</b><div class="nota">Semana ${ses[i] % 100} de ${Math.floor(ses[i] / 100)}</div>` + linhaTip(css("--c4"), "Notificados", fI(c[i])) + linhaTip(css("--inc"), "Estimados", fI(e[i]), "l")); })
+    .on("mousemove", ev => { const [px] = d3.pointer(ev); const i = Math.max(0, Math.min(n - 1, Math.floor((px - ml) / x.step()))); mostrarTip(ev, `<b>${titulo}</b><div class="nota">Semana ${ses[i] % 100} de ${Math.floor(ses[i] / 100)}</div>` + linhaTip(css("--c4"), rot.c, fI(c[i])) + (rot.e ? linhaTip(css("--inc"), rot.e, fI(e[i]), "l") : "")); })
     .on("mouseleave", esconderTip);
 }
 function arbo() {
   const A = D.arbo;
   if (!A || !A[estadoArbo.doenca]) { ["#mapa-arbo", "#g-arbo", "#det-arbo"].forEach(s => semDados(s, "Os dados de arboviroses ainda não estão disponíveis.")); $("#kpis-arbo").innerHTML = ""; $("#tab-arbo").innerHTML = ""; return; }
   const X = A[estadoArbo.doenca], uf = estadoArbo.uf, T = X.territorios[uf || "BR"];
-  const nome = uf ? UFS[uf] : "Brasil";
+  const nome = uf ? UFS[uf] : "Brasil", sinan = X.fonte === "sinan";
+  $("#ctl-arbo-ind-caixa").hidden = sinan;
+  if (sinan) {   // zika (SINAN): casos prováveis, sem estimativa nem nível de alerta
+    kpis("#kpis-arbo", T ? [
+      { l: `Casos prováveis em ${X.ano} · ${nome}`, v: fI(T.casos_ano), d: `até a ${seTxt(X.se)} (SINAN)` },
+      { l: `Incidência em ${X.ano}`, v: fmtN(T.inc_ano, 1), d: "casos prováveis por 100 mil habitantes" },
+      { l: "Municípios com casos no ano", v: fI(T.n_mun), d: `de ${fI(T.n_total)}` },
+      { l: "Últimas 4 semanas", v: fI(T.casos_4s), d: "preliminar: ainda vai aumentar" },
+    ] : []);
+    mapaArbo(); detalheArbo(); tabelaArbo();
+    $("#tit-serie-arbo").textContent = `Zika por semana · ${nome}`;
+    $("#leg-serie-arbo").innerHTML = `<span class="chip"><i style="background:var(--c4)"></i>Casos prováveis</span>`;
+    $("#nota-serie-arbo").textContent = `Barras: casos prováveis de zika (notificações menos as descartadas) em cada semana de início dos sintomas, segundo o SINAN (arquivo de ${dataBR(X.versao)}). Não há estimativa do atraso de notificação: as ${X.incompletas || 4} semanas mais recentes ainda vão aumentar.`;
+    if (T) graficoArbo("#g-arbo", A.ses, T.c, T.e, `Zika · ${nome}`, 240, { c: "Casos prováveis" });
+    return;
+  }
+  $("#nota-serie-arbo").textContent = "Barras: casos já notificados em cada semana de início dos sintomas. Linha: estimativa do InfoDengue, que soma os casos que ainda serão registrados (o atraso de notificação). As semanas mais recentes são as mais incertas.";
   kpis("#kpis-arbo", T ? [
     { l: `Casos notificados no ano · ${nome}`, v: fI(T.casos_ano), d: T.semanas_ano < (X.se % 100) ? `nas ${T.semanas_ano} semanas disponíveis` : `até a ${seTxt(X.se)}` },
     { l: "Incidência, últimas 4 semanas", v: fmtN(T.inc_4s, 1), d: "casos estimados por 100 mil habitantes" },
@@ -977,6 +1001,17 @@ async function mapaArbo() {
   if (!geo0) return semDados("#mapa-arbo");
   const geo = uf ? featuresUF(geo0, uf) : geo0;
   const M = X.mun;
+  if (X.fonte === "sinan") {   // zika: incidência acumulada no ano; município sem notificação = nenhum caso
+    const ZERO = [0, 0, 0], escZ = sequencialLog(100, css("--inc"));
+    $("#tit-mapa-arbo").textContent = `Casos prováveis por 100 mil habitantes em ${X.ano}`;
+    $("#nota-mapa-arbo").textContent = `até a ${seTxt(X.se)}`;
+    desenhaMapa("#mapa-arbo", geo, { W: 760, H: uf ? 620 : 700, getObj: id => M[id] || ZERO, cor: o => escZ(o[1]), contorno: uf ? null : UF_CONTORNO, destaque: LUGAR && LUGAR.ibge,
+      tip: (id, o) => { const m = MUN_IDX.get(id); return m && `<b>${esc(m.nome)} (${m.uf})</b>` + linhaTip(null, `Casos prováveis em ${X.ano}`, fI(o[0])) + linhaTip(null, "Por 100 mil hab.", fmtN(o[1], 1)) + linhaTip(null, "Últimas 4 semanas", fI(o[2])); },
+      onClick: id => { estadoArbo.sel = id; detalheArbo(); } });
+    $("#leg-arbo").className = "legenda";
+    legendaRampa("#leg-arbo", escZ, [0, 1, 3, 10, 30, 100], ["0", "1", "10", "100+"], `Casos prováveis de zika por 100 mil habitantes em ${X.ano}`);
+    return;
+  }
   $("#tit-mapa-arbo").textContent = estadoArbo.ind === "nivel" ? "Nível de alerta por município" : "Incidência por município";
   $("#nota-mapa-arbo").textContent = seTxt(X.se, X.inicio);
   const escInc = sequencialLog(500, css("--inc"));
@@ -993,6 +1028,18 @@ async function detalheArbo() {
   const m = estadoArbo.sel && MUN_IDX.get(estadoArbo.sel);
   if (!m) { box.innerHTML = `<div class="eyebrow">Município</div><p class="muted">Clique em um município no mapa${LUGAR ? "" : " ou escolha o seu no topo da página"} para ver a série de casos dele.</p>`; return; }
   const o = X.mun[m.ibge];
+  if (X.fonte === "sinan") {
+    const z = o || [0, 0, 0];
+    box.innerHTML = `<div class="eyebrow">Zika · SINAN, até a ${seTxt(X.se, X.inicio)}</div><div class="nome">${esc(m.nome)} (${m.uf})</div><div class="linhas">
+      <div><span>Casos prováveis em ${X.ano}</span><span>${fI(z[0])}</span></div>
+      <div><span>Por 100 mil habitantes</span><span>${fmtN(z[1], 1)}</span></div>
+      <div><span>Últimas 4 semanas (preliminar)</span><span>${fI(z[2])}</span></div>
+    </div><div class="grafico" id="g-det-arbo"></div>`;
+    if (!o) return;
+    const s = await serieUF(m.uf), dd = s && s.doencas.zika && s.doencas.zika[m.ibge];
+    if (dd) graficoArbo("#g-det-arbo", s.ses, dd[0], dd[1], `Zika em ${m.nome}`, 170, { c: "Casos prováveis" });
+    return;
+  }
   box.innerHTML = `<div class="eyebrow">${DOENCA_NOME[estadoArbo.doenca]} · ${seTxt(X.se, X.inicio)}</div><div class="nome">${esc(m.nome)} (${m.uf})</div>` +
     (o ? `<div>${chipNivel(o[I.nivel])}</div><div class="linhas">
       <div><span>Casos notificados</span><span>${fI(o[I.casos])}</span></div>
@@ -1007,6 +1054,12 @@ async function detalheArbo() {
 }
 function tabelaArbo() {
   const X = D.arbo[estadoArbo.doenca];
+  if (X.fonte === "sinan") {
+    const lz = UF_ORDEM.map(uf => [uf, X.territorios[uf]]).filter(([, t]) => t).sort((a, b) => (b[1].inc_ano || 0) - (a[1].inc_ano || 0));
+    $("#tab-arbo").innerHTML = `<thead><tr><th>Estado</th><th>Casos prováveis em ${X.ano}</th><th>Por 100 mil hab.</th><th>Municípios com casos</th><th>Últimas 4 semanas</th></tr></thead><tbody>` +
+      lz.map(([uf, t]) => `<tr data-uf="${uf}"${LUGAR && LUGAR.uf === uf ? ' class="destaque"' : ""}><td>${UFS[uf]}</td><td>${fI(t.casos_ano)}</td><td>${fmtN(t.inc_ano, 1)}</td><td>${fI(t.n_mun)} de ${fI(t.n_total)}</td><td>${fI(t.casos_4s)}</td></tr>`).join("") + "</tbody>";
+    return;
+  }
   const linhas = UF_ORDEM.filter(uf => X.territorios[uf]).map(uf => [uf, X.territorios[uf]]).sort((a, b) => (b[1].inc_4s || 0) - (a[1].inc_4s || 0));
   const barra = n => { const t = d3.sum(n) || 1; return `<div class="barra-niveis">${n.map((v, i) => `<i style="width:${100 * v / t}%;background:var(--n${i + 1})"></i>`).join("")}</div>`; };
   $("#tab-arbo").innerHTML = `<thead><tr><th>Estado</th><th>Incidência 4 sem.</th><th>Casos no ano</th><th>Vermelho</th><th>Laranja</th><th>Municípios por nível</th></tr></thead><tbody>` +

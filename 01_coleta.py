@@ -13,6 +13,9 @@ Fontes:
   arbo      InfoDengue (Fiocruz/FGV), pela API do Mosqlimate: indicadores semanais de dengue, chikungunya e
             zika em todos os municípios (casos, estimativa, incidência, nível de alerta, Rt, clima).
             Precisa da chave MOSQLIMATE_KEY (variável de ambiente ou arquivo .mosqlimate_key, fora do repositório).
+  sinan     Zika pelo SINAN (Ministério da Saúde, FTP do DATASUS): o InfoDengue deixou de publicar zika na SE 7
+            de 2024. Arquivos .dbc do ano atual (preliminar) e do anterior, lidos por dbc.py, reduzidos a casos
+            prováveis por município × semana e apagados em seguida.
   elnino    Monitor El Niño (LADRI): situação do fenômeno e chuva/temperatura por região imediata, já publicadas.
   noticias  GDELT (manchetes de veículos brasileiros) e RSS oficiais (Agência Brasil Saúde, Agência Fiocruz, ONU News Saúde)
 
@@ -35,13 +38,13 @@ from datetime import date, datetime, timedelta, timezone
 
 import pandas as pd
 
-from saude_comum import (RAW, REF, RX_TEMAS, SAIDA, UFS, agora, agregar_srag, arquivos_srag, baixar, chave_api,
-                         gravar_json, inicio_semana, ler_json, semana_epi)
+from saude_comum import (RAW, REF, RX_TEMAS, SAIDA, UFS, agora, agregar_sinan, agregar_srag, arquivos_sinan,
+                         arquivos_srag, baixar, baixar_ftp, chave_api, gravar_json, inicio_semana, ler_json, semana_epi)
 
 csv.field_size_limit(2**31 - 1)   # campos do GDELT podem ser muito longos
 
 MOSQLIMATE = "https://api.mosqlimate.org/api/datastore/infodengue/"
-DOENCAS_ARBO = ["dengue", "chikungunya", "zika"]
+DOENCAS_ARBO = ["dengue", "chikungunya"]   # zika: o InfoDengue parou na SE 7 de 2024; vem do SINAN (fonte "sinan")
 ARBO_SEMANAS = 12          # semanas buscadas a cada atualização (o InfoDengue revisa as semanas recentes)
 POR_PAGINA = 300           # registros por página (máximo aceito pela API em 17/11/2026)
 PAUSA = 2.0                # segundos entre consultas: a API do Mosqlimate limita o número de consultas por usuário
@@ -193,6 +196,47 @@ def arbo(semanas: int = ARBO_SEMANAS, forcar: bool = False) -> bool:
     return True
 
 
+# ---------------------------------------------------------------- zika (SINAN)
+def sinan(forcar: bool = False) -> bool:
+    """Zika pelo SINAN (o InfoDengue deixou de publicar zika na SE 7 de 2024). Ano atual e anterior, por
+    município de residência e semana de início dos sintomas. Cada arquivo é lido, contado e apagado: nada
+    individual fica guardado. Devolve False se os arquivos publicados ainda são os mesmos."""
+    pasta = RAW / "sinan"
+    anos = [agora().year - 1, agora().year]
+    achados = arquivos_sinan("ZIKA", anos)
+    if agora().year not in achados and agora().year - 1 not in achados:
+        raise RuntimeError(f"SINAN: nenhum arquivo de zika de {anos} no FTP do DATASUS")
+    versao = {str(a): i["data"].isoformat() for a, i in achados.items()}
+    publicado = (ler_json(SAIDA / "arbo.json").get("zika") or {}).get("arquivos") if (SAIDA / "arbo.json").exists() else None
+    if publicado == versao and not forcar:
+        print(f"  SINAN zika: arquivos {versao} já publicados; nada a baixar")
+        return False
+    codigos = pd.read_csv(REF / "municipios.csv", dtype=str).ibge
+    de6para7 = dict(zip(codigos.str[:6], codigos))
+    linhas, resumo = [], {}
+    for ano, info in achados.items():
+        arq = pasta / f"ZIKABR{ano % 100:02d}.dbc"
+        baixar_ftp(info["url"], arq)
+        try:
+            contagem, r_ano = agregar_sinan(arq)
+        finally:
+            arq.unlink(missing_ok=True)   # o arquivo individual não fica guardado
+        fora = 0
+        for (mun6, se), n in contagem.items():
+            if mun6 in de6para7:
+                linhas.append((de6para7[mun6], se, n))
+            else:
+                fora += n
+        r_ano["municipio_desconhecido"] = fora
+        resumo[str(ano)] = {**r_ano, "arquivo": info["data"].isoformat(), "situacao": info["situacao"]}
+        n_not, n_prov = f"{r_ano['notificacoes']:,}".replace(",", "."), f"{sum(contagem.values()):,}".replace(",", ".")
+        print(f"  SINAN zika {ano} ({info['situacao']}, {info['data']:%d/%m/%Y}): {n_not} notificações, {n_prov} casos prováveis")
+    df = pd.DataFrame(linhas, columns=["ibge", "se", "casos"]).groupby(["ibge", "se"], as_index=False).casos.sum()
+    df.to_csv(pasta / "zika.csv", index=False)
+    gravar_json({"arquivos": versao, "resumo": resumo}, pasta / "info.json", compacto=False)
+    return True
+
+
 # ---------------------------------------------------------------- Monitor El Niño
 def elnino() -> None:
     """Dados já publicados pelo Monitor El Niño (mesmo laboratório): fase do fenômeno e clima por região imediata."""
@@ -281,7 +325,7 @@ def noticias(horas: int = GDELT_HORAS) -> None:
 # As fontes de saúde são semanais: conferir a cada 6 horas põe a semana nova no site no mesmo dia, e a
 # coleta não baixa nada se a extração for a mesma.
 ORDEM_BLOCOS = ["srag", "arbo", "clima", "noticias"]   # a do 02_tratamento
-FONTES_DO_BLOCO = {"clima": ["elnino"]}                 # os demais blocos usam a fonte de mesmo nome
+FONTES_DO_BLOCO = {"arbo": ["arbo", "sinan"], "clima": ["elnino"]}   # os demais usam a fonte de mesmo nome
 INTERVALO = {"srag": timedelta(hours=5, minutes=50), "arbo": timedelta(hours=5, minutes=50),
              "clima": timedelta(hours=5, minutes=50), "noticias": timedelta(minutes=50)}
 
@@ -300,7 +344,7 @@ def plano(completo: bool = False, t: datetime | None = None) -> list[str]:
 
 
 # ---------------------------------------------------------------- execução
-FONTES = {"srag": srag, "arbo": arbo, "elnino": elnino, "noticias": noticias}
+FONTES = {"srag": srag, "arbo": arbo, "sinan": sinan, "elnino": elnino, "noticias": noticias}
 
 
 def main(fontes: list[str], gdelt_horas: int = GDELT_HORAS, arbo_semanas: int = ARBO_SEMANAS, forcar: bool = False) -> None:
@@ -315,8 +359,8 @@ def main(fontes: list[str], gdelt_horas: int = GDELT_HORAS, arbo_semanas: int = 
                 novo = noticias(gdelt_horas)
             elif nome == "arbo":
                 novo = arbo(arbo_semanas, forcar)
-            elif nome == "srag":
-                novo = srag(forcar)
+            elif nome in ("srag", "sinan"):
+                novo = FONTES[nome](forcar)
             else:
                 novo = FONTES[nome]()
             status[nome] = {"ok": True, "novo": novo is not False, "quando": agora().isoformat(timespec="minutes")}

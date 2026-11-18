@@ -150,28 +150,59 @@ def _arbo_historico(uf: str) -> pd.DataFrame:
     return pd.DataFrame(linhas, columns=["doenca", "ibge", "se", "casos", "est", "nivel"])
 
 
+def _zika_sinan() -> tuple[pd.DataFrame | None, dict | None]:
+    """Zika da coleta do SINAN (casos prováveis por município × semana), se houver coleta nova."""
+    arq, arq_info = RAW / "sinan" / "zika.csv", RAW / "sinan" / "info.json"
+    if not (arq.exists() and arq_info.exists()):
+        return None, None
+    df = pd.read_csv(arq, dtype={"ibge": str})
+    df["doenca"], df["est"], df["nivel"] = "zika", float("nan"), float("nan")
+    return df, ler_json(arq_info)
+
+
 def bloco_arbo() -> dict:
-    """Junta a coleta (últimas semanas, todos os municípios) às séries já publicadas e monta os resumos."""
+    """Junta a coleta (últimas semanas, todos os municípios) às séries já publicadas e monta os resumos.
+    Dengue e chikungunya vêm do InfoDengue; a zika, do SINAN (casos prováveis, sem nível de alerta nem
+    estimativa). Uma doença sem coleta nova mantém o que já estava publicado."""
     mun = _pop()
+    anterior = ler_json(SAIDA / "arbo.json") if (SAIDA / "arbo.json").exists() else {}
     novos = []
-    for doenca in DOENCAS_ARBO:
+    for doenca in ["dengue", "chikungunya"]:
         arq = RAW / "arbo" / f"{doenca}.csv"
         if arq.exists():
             df = pd.read_csv(arq, dtype={"ibge": str})
             df["doenca"] = doenca
             novos.append(df)
+    zika, zika_info = _zika_sinan()
+    if zika is not None:
+        novos.append(zika)
     if not novos:
         raise RuntimeError("nenhum arquivo de arboviroses na coleta")
     novo = pd.concat(novos, ignore_index=True).dropna(subset=["se"])
     novo["se"] = novo.se.astype(int)
     novo = novo.merge(mun[["ibge", "uf"]], on="ibge", how="inner")
 
-    # séries municipais: histórico publicado + coleta (a coleta prevalece: o InfoDengue revisa as semanas recentes)
+    # Séries municipais: histórico publicado + coleta (a coleta prevalece: o InfoDengue revisa as semanas recentes).
+    # A zika chega inteira a cada coleta (ano atual e anterior): o histórico dela é substituído, porque casos
+    # reclassificados como descartados somem do arquivo novo.
     hist = pd.concat([_arbo_historico(uf).assign(uf=uf) for uf in UFS], ignore_index=True)
+    if zika is not None:
+        hist = hist[hist.doenca != "zika"]
     serie = pd.concat([hist, novo[["doenca", "ibge", "se", "casos", "est", "nivel", "uf"]]], ignore_index=True)
     serie = serie.drop_duplicates(["doenca", "ibge", "se"], keep="last")
-    ses = sorted(serie.se.unique())[-ARBO_HIST:]
+    serie["se"] = serie.se.astype(int)
+    eixo = serie[serie.doenca != "zika"] if (serie.doenca != "zika").any() else serie   # o InfoDengue define o eixo
+    ses = [int(x) for x in sorted(eixo.se.unique())[-ARBO_HIST:]]
     serie = serie[serie.se.isin(ses)]
+
+    # Semana até a qual o arquivo do SINAN vai (a anterior à data do arquivo): até ela, ausência = nenhum caso
+    if zika_info:
+        datas = {int(a): date.fromisoformat(d) for a, d in zika_info["arquivos"].items()}
+        a_, s_ = semana_epi(max(datas.values()) - timedelta(days=7))
+        zika_se_fim = min(codigo_se(a_, s_), codigo_se(max(datas), 53))
+    else:
+        zika_se_fim = (anterior.get("zika") or {}).get("se")
+    zika_ses = [x for x in ses if zika_se_fim and x <= zika_se_fim]
 
     # arquivos por estado (lidos pelo site quando a pessoa escolhe um município)
     (SAIDA / "arbo").mkdir(parents=True, exist_ok=True)
@@ -179,20 +210,24 @@ def bloco_arbo() -> dict:
         doencas = {}
         for doenca, gd in g.groupby("doenca"):
             piv = {c: gd.pivot(index="ibge", columns="se", values=c).reindex(columns=ses) for c in ["casos", "est", "nivel"]}
+            if doenca == "zika":
+                piv["casos"][zika_ses] = piv["casos"][zika_ses].fillna(0)
             doencas[doenca] = {ib: [[None if v != v else int(v) for v in piv[c].loc[ib]] for c in ["casos", "est", "nivel"]]
                                for ib in piv["casos"].index}
         gravar_json({"ses": [int(s) for s in ses], "doencas": doencas}, SAIDA / "arbo" / f"{uf}.json")
 
     saida = {"doencas": DOENCAS_ARBO, "cols": ARBO_COLS, "ses": [int(s) for s in ses],
              "inicio_semanas": [_sem(s // 100, s % 100) for s in ses]}
-    for doenca in DOENCAS_ARBO:
+    pop_mun = mun.set_index("ibge")["pop"]
+    for doenca in ["dengue", "chikungunya"]:
         nd = novo[novo.doenca == doenca]
         if nd.empty:
+            if anterior.get(doenca):
+                saida[doenca] = anterior[doenca]   # sem coleta nova desta doença: mantém a publicada
             continue
         se_ult = int(nd.se.max())
         ult = nd[nd.se == se_ult].drop_duplicates("ibge", keep="last")
         sd = serie[serie.doenca == doenca]
-        pop_mun = mun.set_index("ibge")["pop"]
 
         def resumo_territorio(filtro_ult: pd.Series, filtro_serie: pd.Series) -> dict:
             u, s = ult[filtro_ult], sd[filtro_serie]
@@ -219,7 +254,55 @@ def bloco_arbo() -> dict:
                              for c in ARBO_COLS] for t in ult.itertuples()},
             "territorios": terr,
         }
+    zk = _bloco_zika(serie[serie.doenca == "zika"], mun, ses, zika_ses, zika_se_fim, zika_info, anterior.get("zika"))
+    if zk:
+        saida["zika"] = zk
     return saida
+
+
+ZIKA_COLS = ["casos_ano", "inc_ano", "casos_4s"]
+ZIKA_INCOMPLETAS = 4   # últimas semanas do arquivo preliminar: ainda recebem notificações
+
+
+def _bloco_zika(sd: pd.DataFrame, mun: pd.DataFrame, ses: list, zika_ses: list, se_fim, info: dict | None,
+                anterior: dict | None) -> dict | None:
+    """Zika (SINAN): casos prováveis no ano por município e estado, incidência no ano e últimas 4 semanas
+    (preliminares). Sem coleta nova, recalcula a partir das séries publicadas e mantém a versão anterior."""
+    if not se_fim or (sd.empty and not info):
+        return anterior
+    se_fim = int(se_fim)
+    ano = se_fim // 100
+    sd = sd[sd.se <= se_fim]
+    ult4 = zika_ses[-4:]
+    pop = mun.set_index("ibge")["pop"]
+    pop_uf = mun.groupby("uf")["pop"].sum()
+    no_ano = sd[sd.se // 100 == ano]
+    por_mun = no_ano.groupby("ibge").casos.sum()
+    por_mun_4s = sd[sd.se.isin(ult4)].groupby("ibge").casos.sum()
+    m = {ib: [int(c), r(1e5 * c / pop[ib], 1) if pop.get(ib) else None, int(por_mun_4s.get(ib, 0))]
+         for ib, c in por_mun.items() if c > 0}
+
+    def resumo(s: pd.DataFrame, p: float, n_total: int) -> dict:
+        por_se = s.groupby("se").casos.sum().reindex(ses)
+        c = [None if x > se_fim else int(0 if v != v else v) for x, v in zip(ses, por_se)]
+        s_ano = s[s.se // 100 == ano]
+        ca, c4 = int(s_ano.casos.sum()), int(s[s.se.isin(ult4)].casos.sum())
+        return {"c": c, "e": [None] * len(ses), "casos_ano": ca, "semanas_ano": se_fim % 100,
+                "inc_ano": r(1e5 * ca / p, 2) if p else None, "casos_4s": c4, "inc_4s": r(1e5 * c4 / p, 2) if p else None,
+                "n_mun": int((s_ano.groupby("ibge").casos.sum() > 0).sum()), "n_total": n_total}
+
+    terr = {"BR": resumo(sd, float(pop.sum()), len(mun))}
+    for uf in UFS:
+        terr[uf] = resumo(sd[sd.uf == uf], float(pop_uf.get(uf, 0)), int((mun.uf == uf).sum()))
+    base = {"fonte": "sinan", "se": se_fim, "inicio": _sem(ano, se_fim % 100), "ano": ano, "cols_mun": ZIKA_COLS,
+            "mun": m, "territorios": terr, "incompletas": ZIKA_INCOMPLETAS}
+    if info:
+        base.update({"versao": info["arquivos"].get(str(ano)) or max(info["arquivos"].values()), "arquivos": info["arquivos"],
+                     "notificacoes": sum(v["notificacoes"] for v in info["resumo"].values()),
+                     "descartadas": sum(v["descartadas"] for v in info["resumo"].values())})
+    elif anterior:
+        base.update({k: anterior.get(k) for k in ("versao", "arquivos", "notificacoes", "descartadas")})
+    return base
 
 
 # ================================================================ clima e saúde
@@ -476,7 +559,7 @@ def bloco_noticias() -> dict:
 
 # ================================================================ execução
 # Bloco -> (função, fontes da coleta de que ele depende). O bloco "clima" usa o arbo.json já gerado.
-BLOCOS = {"srag": (bloco_srag, ["srag"]), "arbo": (bloco_arbo, ["arbo"]), "clima": (bloco_clima, ["elnino"]),
+BLOCOS = {"srag": (bloco_srag, ["srag"]), "arbo": (bloco_arbo, ["arbo", "sinan"]), "clima": (bloco_clima, ["elnino"]),
           "noticias": (bloco_noticias, ["noticias"])}
 
 
@@ -491,18 +574,21 @@ def main(blocos: list[str]) -> None:
         print(f"== {nome}")
         tentado = agora().isoformat(timespec="minutes")   # usado pela agenda (01_coleta.py --plano)
         at.setdefault(nome, {})["tentado"] = tentado
-        if any(not coleta.get(f, {}).get("ok", False) for f in fontes):
+        falhas = [f for f in fontes if not coleta.get(f, {}).get("ok", False)]
+        if len(falhas) == len(fontes):
             print("  coleta falhou: mantendo os dados anteriores")
             at[nome]["ok_hoje"] = False
             continue
-        if (SAIDA / f"{nome}.json").exists() and all(coleta[f].get("novo") is False for f in fontes):
+        if falhas:   # ex.: SINAN fora do ar e InfoDengue ok: o bloco mantém a parte da fonte que falhou
+            print(f"  coleta de {', '.join(falhas)} falhou: essa parte mantém os dados anteriores")
+        if (SAIDA / f"{nome}.json").exists() and all(coleta.get(f, {}).get("novo") is False for f in fontes):
             print("  a fonte ainda não publicou dados novos: mantendo os atuais")
             at[nome]["ok_hoje"] = True
             continue
         try:
             dados = fn()
             gravar_json(dados, SAIDA / f"{nome}.json")
-            at[nome] = {"ok_hoje": True, "atualizado": tentado, "tentado": tentado}
+            at[nome] = {"ok_hoje": not falhas, "atualizado": tentado, "tentado": tentado}
             print(f"  ok ({(SAIDA / f'{nome}.json').stat().st_size / 1e3:.0f} kB)")
         except Exception:  # noqa: BLE001
             traceback.print_exc()

@@ -65,6 +65,27 @@ def validar_srag(S: dict) -> None:
         erro(r["obitos_ano"] <= r["casos_ano"], f"SRAG {uf}: mais óbitos que casos")
 
 
+def validar_sinan(d: str, X: dict) -> None:
+    """Doença vinda do SINAN (zika): casos prováveis, sem nível de alerta."""
+    T = X["territorios"]
+    erro(set(T) == {"BR", *UFS}, f"{d}: faltam territórios")
+    soma = sum(T[uf]["casos_ano"] for uf in UFS)
+    erro(soma == T["BR"]["casos_ano"], f"{d}: soma dos estados ({soma}) ≠ Brasil ({T['BR']['casos_ano']})")
+    erro(sum(v[0] for v in X["mun"].values()) == T["BR"]["casos_ano"], f"{d}: soma dos municípios ≠ Brasil")
+    for ib, v in X["mun"].items():
+        if not (len(ib) == 7 and ib.isdigit()) or v[0] <= 0 or v[2] < 0:
+            erros.append(f"{d}: município inválido {ib} {v}")
+            break
+    for uf, t in T.items():
+        if any(c is not None and c < 0 for c in t["c"]):
+            erros.append(f"{d} {uf}: série com valor negativo")
+            break
+    ano, sem = divmod(X["se"], 100)
+    erro(1 <= sem <= 53 and 2020 <= ano <= agora().year + 1, f"{d}: semana {X['se']} inválida")
+    aviso(X.get("versao") and agora().date() - date.fromisoformat(X["versao"]) <= timedelta(days=45),
+          f"{d}: arquivo do SINAN de {X.get('versao')} (mais de 45 dias)")
+
+
 def validar_arbo(A: dict) -> None:
     cols = A["cols"]
     i_nivel, i_inc = cols.index("nivel"), cols.index("inc")
@@ -75,6 +96,9 @@ def validar_arbo(A: dict) -> None:
             avisos.append(f"arbo: sem dados de {d}")
             continue
         algum = True
+        if X.get("fonte") == "sinan":
+            validar_sinan(d, X)
+            continue
         se = X["se"]
         ano, sem = divmod(se, 100)
         erro(1 <= sem <= 53 and 2020 <= ano <= agora().year + 1, f"arbo {d}: semana {se} inválida")
