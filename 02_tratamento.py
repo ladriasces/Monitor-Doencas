@@ -299,11 +299,11 @@ def _bloco_zika(sd: pd.DataFrame | None, mun: pd.DataFrame, ses: list, se_fim, i
     base = {"fonte": "sinan", "se": se_fim, "inicio": _sem(ano, se_fim % 100), "ano": ano, "cols_mun": ZIKA_COLS,
             "mun": m, "territorios": terr, "incompletas": ZIKA_INCOMPLETAS}
     if info:
-        base.update({"versao": info["arquivos"].get(str(ano)) or max(info["arquivos"].values()), "arquivos": info["arquivos"],
+        base.update({"versao": info["arquivos"].get(str(ano)) or max(info["arquivos"].values()), "arquivos": info["arquivos"], "calculo": info.get("calculo"),
                      "notificacoes": sum(v["notificacoes"] for v in info["resumo"].values()),
                      "descartadas": sum(v["descartadas"] for v in info["resumo"].values())})
     elif anterior:
-        base.update({k: anterior.get(k) for k in ("versao", "arquivos", "notificacoes", "descartadas")})
+        base.update({k: anterior.get(k) for k in ("versao", "arquivos", "calculo", "notificacoes", "descartadas")})
     return base
 
 

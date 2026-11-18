@@ -38,7 +38,7 @@ from datetime import date, datetime, timedelta, timezone
 
 import pandas as pd
 
-from saude_comum import (RAW, REF, RX_TEMAS, SAIDA, UFS, agora, agregar_sinan, agregar_srag, arquivos_sinan,
+from saude_comum import (RAW, REF, RX_TEMAS, SAIDA, SINAN_CALCULO, UFS, agora, agregar_sinan, agregar_srag, arquivos_sinan,
                          arquivos_srag, baixar, baixar_ftp, chave_api, gravar_json, inicio_semana, ler_json, semana_epi)
 
 csv.field_size_limit(2**31 - 1)   # campos do GDELT podem ser muito longos
@@ -207,8 +207,8 @@ def sinan(forcar: bool = False) -> bool:
     if agora().year not in achados and agora().year - 1 not in achados:
         raise RuntimeError(f"SINAN: nenhum arquivo de zika de {anos} no FTP do DATASUS")
     versao = {str(a): i["data"].isoformat() for a, i in achados.items()}
-    publicado = (ler_json(SAIDA / "arbo.json").get("zika") or {}).get("arquivos") if (SAIDA / "arbo.json").exists() else None
-    if publicado == versao and not forcar:
+    zika_pub = (ler_json(SAIDA / "arbo.json").get("zika") or {}) if (SAIDA / "arbo.json").exists() else {}
+    if zika_pub.get("arquivos") == versao and zika_pub.get("calculo") == SINAN_CALCULO and not forcar:
         print(f"  SINAN zika: arquivos {versao} já publicados; nada a baixar")
         return False
     codigos = pd.read_csv(REF / "municipios.csv", dtype=str).ibge
@@ -233,7 +233,7 @@ def sinan(forcar: bool = False) -> bool:
         print(f"  SINAN zika {ano} ({info['situacao']}, {info['data']:%d/%m/%Y}): {n_not} notificações, {n_prov} casos prováveis")
     df = pd.DataFrame(linhas, columns=["ibge", "se", "casos"]).groupby(["ibge", "se"], as_index=False).casos.sum()
     df.to_csv(pasta / "zika.csv", index=False)
-    gravar_json({"arquivos": versao, "resumo": resumo}, pasta / "info.json", compacto=False)
+    gravar_json({"arquivos": versao, "calculo": SINAN_CALCULO, "resumo": resumo}, pasta / "info.json", compacto=False)
     return True
 
 

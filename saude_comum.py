@@ -229,6 +229,9 @@ def agregar_srag(arquivo: Path, ano: int):
 # Arquivos .dbc de notificações individuais, um por agravo e ano: o ano corrente fica em PRELIM (preliminar,
 # atualizado pelo Ministério da Saúde ao longo do ano) e os anos encerrados em FINAIS.
 SINAN_FTP = "ftp://ftp.datasus.gov.br/dissemin/publicos/SINAN/DADOS"
+# Versão do cálculo dos agregados do SINAN: mudou o método, aumente o número (a coleta refaz a contagem
+# mesmo que os arquivos do DATASUS sejam os mesmos já publicados).
+SINAN_CALCULO = 2
 SINAN_DESCARTADO = "2"   # CLASSI_FIN da ficha de zika: 1 confirmado, 2 descartado, 8 inconclusivo, vazio em investigação
 
 
